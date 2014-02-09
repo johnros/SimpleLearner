@@ -11,3 +11,7 @@ dim(data.framed)
 
 
 #### Test forware search approach ####
+library(e1071)
+model.1<- svm(y~.^3, data=data.framed, type='C', kernel='linear',cost=100)
+summary(model.1)
+form.low<- formula(kmScore~1)
