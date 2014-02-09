@@ -1,7 +1,7 @@
 
 
 ## Create control parameters 
-genControl.slearner<- function(){
+makeControl<- function(){
   
 }
 
@@ -67,7 +67,7 @@ colnames(.test)
 
 
 ## Fit model
-fit.slearner<- function(x, y, widths){
+fit.slearner<- function(x, y, widths, control=makeControl()){
   ### create basis
   
   
@@ -85,3 +85,7 @@ summary.slearner<- function(){
   
 }
 
+
+
+## Plot SVM output
+plot.slearner<- function
