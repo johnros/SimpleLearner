@@ -1,5 +1,16 @@
-
 #### Playing with model.matrix construction ####
+
+x.p<- 5
+x<- matrix(rnorm(10000),1000,x.p, dimnames=list(NULL, LETTERS[1:x.p]))
+colnames(x.framed<- as.data.frame(x))
+colnames(.xx<- model.matrix(terms(x=formula(~.^10), data=x.framed), data=x.framed))
+y<- .xx %*% runif(ncol(.xx), 0, 30)  + rnorm(nrow(.xx), sd=2)
+widths<- rep(5,10)
+names( .data<- data.frame(y, x) )
+
+lm.1<- lm(y~)
+
+
 
 # envir() version 
 vars<- new.env()

@@ -12,7 +12,7 @@ makeControl<- function(
     ))
 }
 ## Testing:
-makeControl()
+#makeControl()
 
 
 
@@ -25,7 +25,7 @@ makeControl()
 makeBasis.slearner<- function(x,y, widths, control){
   
   ## Checks:
-  stopifnot(all(widths <= head(c(1,widths) * ncol(x),-1)))
+  if(any(widths > head(c(1,widths) * ncol(x),-1))) stop("Impossible width value.")
   if(missing(control)) control<- makeControl() # currently deprecated
   
   ## Initializing 
@@ -60,13 +60,19 @@ makeBasis.slearner<- function(x,y, widths, control){
     }
   anova(lm.2)
   
-  return(model.matrix(lm.2)[,-1])
+  ## TODO: return rotation matrix to allow prediction on new data
+  return(list(
+    basis= model.matrix(lm.2)[,-1],
+    svd=x1.svd ,
+    formula=    ))
 }
-## Testing:
-x<- matrix(rnorm(10000),1000,5)
-x.framed<- as.data.frame(x)
-xx<- model.matrix(terms(x=formula(~.^10), data=x.framed), data=x.framed) 
-y<- xx %*% runif(ncol(xx), 0, 30)  + rnorm(nrow(xx), sd=2)
+## Testing:ִ
+debug(makeBasis.slearner)
+x.p<- 5
+x<- matrix(rnorm(10000),1000,x.p, dimnames=list(NULL, LETTERS[1:x.p]))
+colnames(x.framed<- as.data.frame(x))
+colnames(.xx<- model.matrix(terms(x=formula(~.^10), data=x.framed), data=x.framed))
+y<- .xx %*% runif(ncol(.xx), 0, 30)  + rnorm(nrow(.xx), sd=2)
 widths<- rep(5,10)
 
 .test<- makeBasis.slearner(x=x, y=y, widths=widths)
@@ -88,49 +94,68 @@ colnames(.test)
 
 
 ## Fit model
-svm.slearner<- function(x, y, widths, lambdas=2^(1:6), ...){
-  ## Remove:
-  x<- matrix(rnorm(10000),1000,5)
-  x.framed<- as.data.frame(x)
-  .xx<- model.matrix(terms(x=formula(~.^10), data=x.framed), data=x.framed) 
-  y<- .xx %*% runif(ncol(.xx), 0, 30)  + rnorm(nrow(.xx), sd=2)
-  y.factor<- factor(sign(y))
-  widths<- rep(5,10)
-  control<- makeControl()
-  lambdas<- 2^(1:6)
-  
-  
-  
-  ## Initializing:
-  if(missing(control)) control<- makeControl(sampling="cross")
+svm.slearner<- function(x, y, widths, lambdas=2^(1:6), control=makeControl(sampling="fix"), ... ){
   
   ### create basis
-  xx<- makeBasis.slearner(x=x, y=y.factor, widths=widths)
+  xx<- makeBasis.slearner(x=x, y=y, widths=widths)
   
   ### fit model:
   # Add "type='C'" if svm does not correctly recognize the type:
   svm.tune <- tune.svm(x=xx, y=y.factor, 
                   kernel='linear', cost = lambdas, 
                   tunecontrol=control$tunecontrol)
-  svm(x=xx, y=y.factor, )
-  #plot(svm.tune)
-
+  result<-svm.tune 
   
-  
-  
+  return(result)
 }
 ## Testing:
+## Remove:
+x.p<- 5
+x<- matrix(rnorm(10000),1000,x.p, dimnames=list(NULL, LETTERS[1:x.p]))
+x.framed<- as.data.frame(x)
+.xx<- model.matrix(terms(x=formula(~.^10), data=x.framed), data=x.framed) 
+y<- .xx %*% runif(ncol(.xx), 0, 30)  + rnorm(nrow(.xx), sd=2)
+y.factor<- factor(sign(y))
+widths<- rep(5,10)
+control<- makeControl()
+lambdas<- 2^(1:6)
 
-
+colnames(makeBasis.slearner(x=x, y=y, widths=widths))
+slearner.fit<- svm.slearner(x=x, y=y.factor, widths=widths)
+predict(slearner.fit$best.model)
 
 
 
 
 
 ## Predict
-predict.slearner<- function(){
+predict.slearner<- function(sleaner, newdata){
+  if(missing(newdata)) return(predict(sleaner$best.model))
   
+  ## TODO: apply predictor with new data.
+  # Note: need to carry ratation matrix from makeBasis and assume variables have same ordering!
+  
+  ## In case new Xs are provided:
+  # make new model.matrix
+  # apply prediction with new model matrix
+  varnames<- colnames(slearner.fit$best.model$SV)
+  new.expression<- 
+  new.formula<- as.formula(new.expression)
+  model.matrix(new.formula, data=newdata)
+  
+
 }
+## Testing:
+sleaner.pred<- predict.slearner(slearner.fit)
+## TODO: newdata predictin
+sleaner.pred<- predict.slearner(slearner.fit)
+
+
+
+
+
+
+
 
 summary.slearner<- function(){
   
