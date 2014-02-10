@@ -1,4 +1,6 @@
 
+#### Playing with model.matrix construction ####
+
 # envir() version 
 vars<- new.env()
 assign(x='x1', value=x1, envir=vars)
@@ -19,7 +21,7 @@ anova(lm.2)
   
   
   
-# data,frame version:
+# data.frame version:
 colnames(.data<- data.frame(y=y, x1=x1, x0=x0))
 lm.1<- lm(y~x1, data=.data)
 form.low<- formula(y ~ x1)
@@ -28,3 +30,49 @@ scope<- list(lower=form.low, upper=form.up)
 lm.2<- step(object=lm.1, direction='forward', scope=scope, steps=widths[2])
 summary(lm.2)
 add1(lm.1, scope=scope$upper)
+
+
+
+
+
+
+#### Test-train model selection ####
+library(e1071)
+model.1<- svm(y~.^3, data=data.framed, type='C', kernel='linear', cross=5, cost=1000)
+summary(model.1)
+form.low<- formula(kmScore~1)
+
+
+
+
+
+### e1071:::tune examples 
+data(iris)
+## tune `svm' for classification with RBF-kernel (default in svm),
+## using one split for training/validation set
+
+obj <- tune(svm, Species~., data = iris, 
+            ranges = list(gamma = 2^(-1:1), cost = 2^(2:4)),
+            tunecontrol = tune.control(sampling = "fix"))
+length(obj$train.ind)
+
+## alternatively:
+control<-   tune.control(sampling = "fix")
+obj <- tune.svm(Species~., data = iris, gamma = 2^(-1:1), cost = 2^(2:4), tunecontrol=control)
+length(obj$train.ind)
+
+control<-   tune.control(sampling = "cross")
+obj <- tune.svm(Species~., data = iris, gamma = 2^(-1:1), cost = 2^(2:4), tunecontrol=control)
+length(obj$train.ind)
+
+control<-   tune.control(sampling = "boot")
+obj <- tune.svm(Species~., data = iris, gamma = 2^(-1:1), cost = 2^(2:4), tunecontrol=control)
+length(obj$train.ind)
+
+
+
+
+
+summary(obj)
+plot(obj)
+
