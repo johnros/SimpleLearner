@@ -13,4 +13,5 @@ RnwWeave: knitr
 LaTeX: pdfLaTeX
 
 BuildType: Package
+PackagePath: Package
 PackageInstallArgs: --no-multiarch --with-keep.source
