@@ -8,7 +8,7 @@ y<- .xx %*% runif(ncol(.xx), 0, 30)  + rnorm(nrow(.xx), sd=2)
 widths<- rep(5,10)
 names( .data<- data.frame(y, x) )
 
-lm.1<- lm(y~)
+lm(y~2:4, data=.data)
 
 
 
