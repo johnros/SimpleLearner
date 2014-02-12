@@ -26,62 +26,62 @@ makeControl<- function(
 # and linearly independent of all existing predictors.
 makeBasis.slearner<- function(x,y, widths, control){
   ## Delete Me:
-    x.p<- 5
-    x<- matrix(rnorm(10000),1000,x.p, dimnames=list(NULL, LETTERS[1:x.p]))
-    x.framed<- as.data.frame(x)
-    .xx<- model.matrix(terms(x=formula(~.^10), data=x.framed), data=x.framed)
-    y<- .xx %*% runif(ncol(.xx), 0, 30)  + rnorm(nrow(.xx), sd=2)
-    widths<- rep(4,10)
-    control<- makeControl()
+  #     x.p<- 5
+  #     x<- matrix(rnorm(10000),1000,x.p, dimnames=list(NULL, LETTERS[1:x.p]))
+  #     x.framed<- as.data.frame(x)
+  #     .xx<- model.matrix(terms(x=formula(~.^10), data=x.framed), data=x.framed)
+  #     y<- .xx %*% runif(ncol(.xx), 0, 30)  + rnorm(nrow(.xx), sd=2)
+  #     widths<- rep(4,10)
+  #     control<- makeControl()
   
   ## Checks:
   if(any(widths > head(c(1,widths) * ncol(x),-1))) stop("Impossible width value.")
   if(missing(control)) control<- makeControl() 
+  if(is.factor(y)) y<- as.numeric(as.character(y))
   
   ## Initializing 
-  d<- length(widths)
   n<- nrow(x)
   p<- ncol(x)
   
   ## Make first layer:
   x<- cbind(1, x)
-  x1.svd<- svd(x)
-  W<- x1.svd$v[ , 1:widths[1]]
-  x0<-x %*% W # Low dimensional X representation (F in Ohad)
+  x0.svd<- svd(x)
+  W<- x0.svd$v[ , 1:widths[1]]
+  x1 <- x %*% W # Low dimensional X representation (F in Ohad)
   
   ## Make next layers:
   # Check for orthogonality with existing layers
   # Check for predictive power
-  .data<- as.data.frame(cbind(y, x0, deparse.level=0)) # Note this will remove column names
-  x1.ind<- 1+(1:widths[1]) # Indexes of first layer
-  form.up.expression<- paste('V1 ~',paste(sprintf("V%d", x1.ind), collapse="+"))
-  form.up <- as.formula(form.up.expression)
-  lm.1<- lm(form.up, data=.data)
-  lm.2<- lm.1
-  form.low<- formula(V1~1)
+  .data<- data.frame(y, x1) # Note this will remove column names
+  colnames(.data)<- sprintf("V%d", 1:ncol(.data))
+  lm.1<- lm(V1~., data=.data)
   
-  for(i in 2:d){
-    #i<- 1
-    ## TODO: take care of squared terms.
-    form.up.expression<- sprintf('V1 ~ (%s) * (%s)', 
-                              paste(
-                                add.scope(form.low, form.up)
-                                , collapse="+")
-                              ,
-                              paste(sprintf("V%d", x1.ind), collapse=" + "))
-    form.up<- as.formula(form.up.expression)
+  
+  for(i in 2:length(widths)){
+    #i<- 2
+    form.low<- formula(lm.1)
+    x<- model.matrix(lm.1)
         
-    lm.2<- step(object=lm.2, direction='forward', 
-                scope=form.up, steps=widths[i], 
-                trace=0, k=control$penalty)
-    form.low<- formula(lm.2)
-  }
-  #anova(lm.2)
+    x.candid.inds<- rep(1:ncol(x), each=ncol(x1))
+    x1.candid.inds<- rep(1:ncol(x1), times=ncol(x))
+    ## TODO: manage column names to create predictor
+    x.candidate<- x[,x.candid.inds] * x1[,x1.candid.inds]
     
-  ## TODO: return rotation matrix to allow prediction on new data
+    .data<- data.frame(y, x, x.candidate)
+    colnames(.data)<- sprintf("V%d", 1:ncol(.data))
+    
+    x.high.ind<- 2:ncol(x.candidate)
+    form.up.expression<- paste('V1 ~',paste(sprintf("V%d", x.high.ind), collapse="+"))
+    form.up <- as.formula(form.up.expression)
+    
+    lm.1<- step(object=lm.1, scope=list(lower=form.low, upper=form.up), direction='forward', steps=widths[i])
+  }
+  anova(lm.1)
+    
+  ## TODO: return rotation matrix and variable construction to allow prediction on new data
   return(list(
-    basis= model.matrix(lm.2)[,-1],
-    svd=x1.svd,
+    basis= model.matrix(lm.1)[,-1],
+    svd=x0.svd,
     formula=NULL    ))
 }
 ## Testing:ִ
@@ -92,7 +92,6 @@ makeBasis.slearner<- function(x,y, widths, control){
 # y<- .xx %*% runif(ncol(.xx), 0, 30)  + rnorm(nrow(.xx), sd=2)
 # widths<- rep(3,10)
 # 
-# debug(makeBasis.slearner)
 # .test<- makeBasis.slearner(x=x, y=y, widths=widths)
 # sum(widths)
 # dim(.test$basis)

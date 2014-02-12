@@ -1,5 +1,5 @@
 ## Fit model
-svm.slearner<- function(x, y, widths, lambdas=2^(1:6), control=makeControl(sampling="fix"), ... ){
+svm.slearner<- function(x, y, widths, lambdas=2^(1:6), control=makeControl(), ... ){
   
   ### create basis
   xx<- makeBasis.slearner(x=x, y=y, widths=widths)
@@ -17,10 +17,10 @@ svm.slearner<- function(x, y, widths, lambdas=2^(1:6), control=makeControl(sampl
 ## Testing with Ohad's data:
 load(file='Package/data/test_data.RData')
 widths<- c(10,10)
-lambdas<- round( 2^seq(-10,2,length=30) , 4)
+lambdas<-  2^seq(-10,1,length=50) 
 slearner.fit<- svm.slearner(x=test.data$X, y=test.data$Y, 
                             lambdas=lambdas, widths=widths, 
-                            control=makeControl(sampling="fix"))
+                            control=makeControl(sampling="fix", penalty=0))
 slearner.fit
 slearner.fit<- svm.slearner(x=test.data$X, y=test.data$Y, 
                             lambdas=0.01, widths=widths, 
@@ -28,8 +28,6 @@ slearner.fit<- svm.slearner(x=test.data$X, y=test.data$Y,
 slearner.fit
 
 ## Test with my data:
-
-
 x.p<- 5
 x<- matrix(rnorm(10000), 1000, x.p, dimnames=list(NULL, LETTERS[1:x.p]))
 x.framed<- as.data.frame(x)
@@ -37,7 +35,6 @@ x.framed<- as.data.frame(x)
 y<- .xx %*% runif(ncol(.xx), 0, 30)  + rnorm(nrow(.xx), sd=2)
 y.factor<- factor(sign(y))
 widths<- rep(5,10)
-control<- makeControl(sampling='fix')
 lambdas<- 2^(1:6)
 
 makeBasis.slearner(x=x, y=y, widths=widths)
