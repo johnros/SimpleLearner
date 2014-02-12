@@ -81,9 +81,43 @@ obj <- tune.svm(Species~., data = iris, gamma = 2^(-1:1), cost = 2^(2:4), tuneco
 length(obj$train.ind)
 
 
-
-
-
 summary(obj)
 plot(obj)
+
+
+
+#### Equivalence of variable selection method ####
+## Make data:
+n<- 100
+p<- 10
+x.raw<- as.data.frame(matrix(rnorm(n*p, sd=1),n, p, dimnames=list(NULL, LETTERS[1:p])))
+x<- t(apply(x.raw, 1, `*`, seq(length.out=ncol(x.raw)))) # Each predictor has different variance
+coefs<- runif(p, 0, 1)
+y<- as.matrix(x) %*% coefs   + rnorm(n, sd=1)
+.data<- data.frame(y=y, x=x)
+lm.0<- lm(y~x.A, data=.data)
+## Check invariance of correlation:
+x0<- cbind(x[,'A'], 1)
+x0.svd<- svd(x0)
+U<- x0.svd$u
+x.orth<- as.matrix( x- U%*%t(U) %*% as.matrix(x))
+round(t(x.orth) %*% x0, 10) # Check ortogonalization worked
+
+(cors<- cor(residuals(lm.0), x.orth)[1,])
+# Note the correlation with A (which is in the model) is not zero. Numerics?!?
+
+# Which are clearly different than:
+cor(y, x.orth)
+cor(residuals(lm.0), x)
+cor(y, x)
+
+
+
+## Is the ordering in agreement with RSS? Yup!
+form.up.expr<- sprintf("~%s", paste(colnames(.data)[-1], collapse="+"))
+add1.0<- add1(lm.0, scope=as.formula(form.up.expr) , data=.data, k=0)
+# Result:
+cbind(
+  rownames(add1.0)[order(add1.0$RSS, decreasing=FALSE)],
+  names(cors)[order(abs(cors), decreasing=TRUE)])
 

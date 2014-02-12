@@ -3,7 +3,7 @@
 ## Create control parameters 
 makeControl<- function(
   sampling="fix",
-  penalty=2
+  penalty=0
   ){
   ## Initializing:
   require(e1071)
@@ -26,17 +26,17 @@ makeControl<- function(
 # and linearly independent of all existing predictors.
 makeBasis.slearner<- function(x,y, widths, control){
   ## Delete Me:
-#   x.p<- 5
-#   x<- matrix(rnorm(10000),1000,x.p, dimnames=list(NULL, LETTERS[1:x.p]))
-#   colnames(x.framed<- as.data.frame(x))
-#   colnames(.xx<- model.matrix(terms(x=formula(~.^10), data=x.framed), data=x.framed))
-#   y<- .xx %*% runif(ncol(.xx), 0, 30)  + rnorm(nrow(.xx), sd=2)
-#   widths<- rep(4,10)
-#   control=makeControl(penalty=0)
+    x.p<- 5
+    x<- matrix(rnorm(10000),1000,x.p, dimnames=list(NULL, LETTERS[1:x.p]))
+    x.framed<- as.data.frame(x)
+    .xx<- model.matrix(terms(x=formula(~.^10), data=x.framed), data=x.framed)
+    y<- .xx %*% runif(ncol(.xx), 0, 30)  + rnorm(nrow(.xx), sd=2)
+    widths<- rep(4,10)
+    control<- makeControl()
   
   ## Checks:
   if(any(widths > head(c(1,widths) * ncol(x),-1))) stop("Impossible width value.")
-  if(missing(control)) control<- makeControl() # currently deprecated
+  if(missing(control)) control<- makeControl() 
   
   ## Initializing 
   d<- length(widths)
@@ -47,26 +47,35 @@ makeBasis.slearner<- function(x,y, widths, control){
   x<- cbind(1, x)
   x1.svd<- svd(x)
   W<- x1.svd$v[ , 1:widths[1]]
-  x0<-x %*% W # Low dimensinal X representation (F in Ohad)
+  x0<-x %*% W # Low dimensional X representation (F in Ohad)
   
   ## Make next layers:
   # Check for orthogonality with existing layers
   # Check for predictive power
   .data<- as.data.frame(cbind(y, x0, deparse.level=0)) # Note this will remove column names
   x1.ind<- 1+(1:widths[1]) # Indexes of first layer
-  form.low.expression<- paste('V1 ~',paste(sprintf("V%d", x1.ind), collapse="+"))
-  form.low <- as.formula(form.low.expression)
-  lm.1<- lm(form.low, data=.data)
+  form.up.expression<- paste('V1 ~',paste(sprintf("V%d", x1.ind), collapse="+"))
+  form.up <- as.formula(form.up.expression)
+  lm.1<- lm(form.up, data=.data)
   lm.2<- lm.1
+  form.low<- formula(V1~1)
   
   for(i in 2:d){
+    #i<- 1
+    ## TODO: take care of squared terms.
     form.up.expression<- sprintf('V1 ~ (%s) * (%s)', 
-                              deparse(formula(lm.2)[[3]], width.cutoff=500),
+                              paste(
+                                add.scope(form.low, form.up)
+                                , collapse="+")
+                              ,
                               paste(sprintf("V%d", x1.ind), collapse=" + "))
-    form.up<- as.formula(form.up.expression)  
-    lm.2<- step(object=lm.2, direction='forward', scope=form.up, steps=widths[i], 
+    form.up<- as.formula(form.up.expression)
+        
+    lm.2<- step(object=lm.2, direction='forward', 
+                scope=form.up, steps=widths[i], 
                 trace=0, k=control$penalty)
-    }
+    form.low<- formula(lm.2)
+  }
   #anova(lm.2)
     
   ## TODO: return rotation matrix to allow prediction on new data

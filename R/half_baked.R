@@ -14,6 +14,22 @@ svm.slearner<- function(x, y, widths, lambdas=2^(1:6), control=makeControl(sampl
   return(result)
 }
 ## Testing:
+## Testing with Ohad's data:
+load(file='Package/data/test_data.RData')
+widths<- c(10,10)
+lambdas<- round( 2^seq(-10,2,length=30) , 4)
+slearner.fit<- svm.slearner(x=test.data$X, y=test.data$Y, 
+                            lambdas=lambdas, widths=widths, 
+                            control=makeControl(sampling="fix"))
+slearner.fit
+slearner.fit<- svm.slearner(x=test.data$X, y=test.data$Y, 
+                            lambdas=0.01, widths=widths, 
+                            control=makeControl(sampling="fix"))
+slearner.fit
+
+## Test with my data:
+
+
 x.p<- 5
 x<- matrix(rnorm(10000), 1000, x.p, dimnames=list(NULL, LETTERS[1:x.p]))
 x.framed<- as.data.frame(x)
@@ -28,18 +44,6 @@ makeBasis.slearner(x=x, y=y, widths=widths)
 slearner.fit<- svm.slearner(x=x, y=y.factor, widths=widths)
 predict(slearner.fit$best.model)
 
-## Testing with Ohad's data:
-load(file='Package/data/test_data.RData')
-widths<- c(10,10)
-lambdas<- round( 2^seq(-10,2,length=30) , 4)
-slearner.fit<- svm.slearner(x=test.data$X, y=test.data$Y, 
-                            lambdas=lambdas, widths=widths, 
-                            control=makeControl(sampling="fix"))
-slearner.fit
-slearner.fit<- svm.slearner(x=test.data$X, y=test.data$Y, 
-                            lambdas=0.01, widths=widths, 
-                            control=makeControl(sampling="fix"))
-slearner.fit
 
 
 
