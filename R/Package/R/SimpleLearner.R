@@ -29,8 +29,8 @@ makeBasis.slearner<- function(x,y, widths, control){
   W2 <- W / matrix(getNorm(x1), ncol=ncol(W), nrow=nrow(W), byrow=TRUE)
   x2 <- (x0 %*% W2)[,1:widths[1]] # Low dimensional X representation (F in Ohad)  
   # checkOrtho(x2)   # x2 Orthonormal
-    
-  x.added.orth<- x.added<- x.t<- x.t.orth<- x2 # The cummulating basis
+  
+  x.added<- x.t<- x.t.orth<- x2 # The cummulating basis
   y.t<- y
   y.t<- y.t - x.t.orth %*% t(x.t.orth) %*% y.t # Residuals
   
@@ -43,42 +43,42 @@ makeBasis.slearner<- function(x,y, widths, control){
     # sort variables by correlation
     # Add layer
     
-    # Note: The residuals are not centered: mean(y.t)    
-    
     x.t.candid.ind<- rep(1:ncol(x.added), each=ncol(x1))
-    x2.candid.inds<- rep(1:ncol(x1), times=ncol(x.added))
+    x2.candid.inds<- rep(1:ncol(x2), times=ncol(x.added))
     ## TODO: manage column names to create predictor
         
     x.candidate<- x.added[, x.t.candid.ind] * x2[, x2.candid.inds] # Candidate predictors
     x.candidate<- x.candidate - x.t.orth %*% t(x.t.orth) %*% x.candidate # Orthogonal candidate predictors 
-    #round(t(x.candidate) %*% x.t, 3)
-    #round(t(x.candidate) %*% x.t.orth, 3)
+    # round(t(x.candidate) %*% x.t, 3)
+    # round(t(x.candidate) %*% x.t.orth, 3)
     
-    x.candidate.svd<- svd(x.candidate)
-    d.ind<- x.candidate.svd$d < .Machine$double.eps
-    x.candidate<- x.candidate %*% x.candidate.svd$v[ ,!d.ind] # Removes colinear predictors
-    #     round(t(x.candidate) %*% x.t, 4)
-    #     checkOrtho(x.candidate)
     x.candidate<- reNorm(x.candidate)
-    #     checkOrtho(x.candidate)
         
-
-    x.candidate.ord<- order(abs(t(y.t) %*% x.candidate), decreasing=TRUE) # Order along correlations
-    # abs(t(y.t) %*% x.candidate)[x.candidate.ord]
-    x.added<- x.candidate[, x.candidate.ord[1:widths[i]]] # Select the best candidates
-    #  checkOrtho(x.added); round(t(x.added) %*% x.t, 4); round(t(x.added) %*% x.t.orth, 4)
+    x.added<- NULL
+    for(j in 1:widths[i]){
+      x.candidate.cor<- abs(t(y.t) %*% x.candidate)
+      x.candidate.ord<- which.max(x.candidate.cor) # Order along correlations
+      if(x.candidate.cor[x.candidate.ord] < .Machine$double.eps) break()
+      # abs(t(y.t) %*% x.candidate)[x.candidate.ord]
+      x.added1<- x.candidate[, x.candidate.ord] # Select the best candidates
+      #  checkOrtho(x.added); round(t(x.added) %*% x.t, 4); round(t(x.added) %*% x.t.orth, 4)
+      
+       # Update cummulative basis
+      x.added<- cbind(x.added, x.added1)
+      # checkOrtho(x.t)
+            
+      y.t<- y.t- x.added1 %*% t(x.added1) %*% y.t          
+    }
+    diag(checkOrtho(x.added))
+    round(t(x.added) %*% x.t,5)
+        
+    x.t<- cbind(x.t, x.added, deparse.level=0)
+    checkOrtho(x.t)
     
     x.added.svd<- svd(x.added)
-    x.added.orth<- x.added.svd$u %*% t(x.added.svd$v)
-    # checkOrtho(x.added.orth); round(t(x.added.orth) %*% x.t, 4); round(t(x.added.orth) %*% x.t.orth, 4)
-    
-    x.t<- cbind(x.t, x.added) # Update cummulative basis
-    # checkOrtho(x.t)
-    x.t.orth<- cbind(x.t.orth, x.added.orth) # Update orthogonal basis
-    # checkOrtho(x.t.orth)
-    
-    y.t<- y.t- x.added.orth %*% t(x.added.orth) %*% y.t
-    
+    x.t.orth<- cbind(x.t.orth, x.added.svd$u %*% t(x.added.svd$v) )
+    checkOrtho(x.t.orth)
+    # diag(checkOrtho(x.candidate))
   }
       
   ## TODO: return rotation matrix and variable construction to allow prediction on new data

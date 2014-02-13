@@ -17,10 +17,10 @@ svm.slearner<- function(x, y, widths, lambdas=2^(1:6), control=makeControl(), ..
 ## Testing with Ohad's data:
 load(file='Package/data/test_data.RData')
 widths<- c(10,10)
-lambdas<-  2^seq(-10,1,length=50) 
+lambdas<-  2^seq(-10,3,length=50) 
 slearner.fit<- svm.slearner(x=test.data$X, y=test.data$Y, 
                             lambdas=lambdas, widths=widths, 
-                            control=makeControl(sampling="fix", penalty=0))
+                            control=makeControl(sampling="fix"))
 slearner.fit
 slearner.fit<- svm.slearner(x=test.data$X, y=test.data$Y, 
                             lambdas=0.001, widths=widths, 
