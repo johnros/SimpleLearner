@@ -69,15 +69,16 @@ makeBasis.slearner<- function(x,y, widths, control){
             
       y.t<- y.t- x.added1 %*% t(x.added1) %*% y.t          
     }
-    diag(checkOrtho(x.added))
-    round(t(x.added) %*% x.t,5)
+    #     diag(checkOrtho(x.added))
+    #     round(t(x.added) %*% x.t,5)
         
+    # Note: Why does Ohad recompute the cadidate variables?
     x.t<- cbind(x.t, x.added, deparse.level=0)
-    checkOrtho(x.t)
+    #     checkOrtho(x.t)
     
     x.added.svd<- svd(x.added)
     x.t.orth<- cbind(x.t.orth, x.added.svd$u %*% t(x.added.svd$v) )
-    checkOrtho(x.t.orth)
+    #     checkOrtho(x.t.orth)
     # diag(checkOrtho(x.candidate))
   }
       

@@ -2,6 +2,7 @@
 svm.slearner<- function(x, y, widths, lambdas=2^(1:6), control=makeControl(), ... ){
   
   ### create basis
+  ## TODO: Avoid overfit by optimizing training set.
   xx<- makeBasis.slearner(x=x, y=y, widths=widths)
   
   ### fit model:
