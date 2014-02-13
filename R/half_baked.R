@@ -23,7 +23,7 @@ slearner.fit<- svm.slearner(x=test.data$X, y=test.data$Y,
                             control=makeControl(sampling="fix", penalty=0))
 slearner.fit
 slearner.fit<- svm.slearner(x=test.data$X, y=test.data$Y, 
-                            lambdas=0.01, widths=widths, 
+                            lambdas=0.001, widths=widths, 
                             control=makeControl(sampling="fix"))
 slearner.fit
 

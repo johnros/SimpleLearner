@@ -1,24 +1,3 @@
-
-
-## Create control parameters 
-makeControl<- function(
-  sampling="fix",
-  penalty=0
-  ){
-  ## Initializing:
-  require(e1071)
-    
-  return(list(
-    tunecontrol=tune.control(sampling=sampling),
-    penalty=penalty
-    ))
-}
-## Testing:
-#makeControl()
-
-
-
-
 ### Generate X matrix
 ## Sketch:
 # Choose first layer by singular values
@@ -26,63 +5,86 @@ makeControl<- function(
 # and linearly independent of all existing predictors.
 makeBasis.slearner<- function(x,y, widths, control){
   ## Delete Me:
-  #     x.p<- 5
-  #     x<- matrix(rnorm(10000),1000,x.p, dimnames=list(NULL, LETTERS[1:x.p]))
-  #     x.framed<- as.data.frame(x)
-  #     .xx<- model.matrix(terms(x=formula(~.^10), data=x.framed), data=x.framed)
-  #     y<- .xx %*% runif(ncol(.xx), 0, 30)  + rnorm(nrow(.xx), sd=2)
-  #     widths<- rep(4,10)
-  #     control<- makeControl()
-  
+#       x.p<- 5
+#       n<- 100
+#       x<- matrix(rnorm(n*x.p),n,x.p, dimnames=list(NULL, LETTERS[1:x.p]))
+#       x.framed<- as.data.frame(x)
+#       .xx<- model.matrix(terms(x=formula(~.^10), data=x.framed), data=x.framed)
+#       y<- .xx %*% runif(ncol(.xx), 0, 30)  + rnorm(nrow(.xx), sd=2)
+#       widths<- rep(4,10)
+#       control<- makeControl()
+
   ## Checks:
   if(any(widths > head(c(1,widths) * ncol(x),-1))) stop("Impossible width value.")
   if(missing(control)) control<- makeControl() 
   if(is.factor(y)) y<- as.numeric(as.character(y))
   
-  ## Initializing 
-  n<- nrow(x)
-  p<- ncol(x)
-  
   ## Make first layer:
-  x<- cbind(1, x)
-  x0.svd<- svd(x)
+  x0<- cbind(1, x)
+  x0.svd<- svd(x0, nu=0, nv=ncol(x0))
   W<- x0.svd$v[ , 1:widths[1]]
-  x1 <- x %*% W # Low dimensional X representation (F in Ohad)
+  x1 <- x0 %*% W # Low dimensional X representation (F in Ohad)
+  #  checkOrtho(x1[,1:widths[1]]) # Orthogonal but not orthonormal
   
-  ## Make next layers:
-  # Check for orthogonality with existing layers
-  # Check for predictive power
-  .data<- data.frame(y, x1) # Note this will remove column names
-  colnames(.data)<- sprintf("V%d", 1:ncol(.data))
-  lm.1<- lm(V1~., data=.data)
-  
+  W2 <- W / matrix(getNorm(x1), ncol=ncol(W), nrow=nrow(W), byrow=TRUE)
+  x2 <- (x0 %*% W2)[,1:widths[1]] # Low dimensional X representation (F in Ohad)  
+  # checkOrtho(x2)   # x2 Orthonormal
+    
+  x.added.orth<- x.added<- x.t<- x.t.orth<- x2 # The cummulating basis
+  y.t<- y
+  y.t<- y.t - x.t.orth %*% t(x.t.orth) %*% y.t # Residuals
   
   for(i in 2:length(widths)){
-    #i<- 2
-    form.low<- formula(lm.1)
-    x<- model.matrix(lm.1)
-        
-    x.candid.inds<- rep(1:ncol(x), each=ncol(x1))
-    x1.candid.inds<- rep(1:ncol(x1), times=ncol(x))
+    #i<- 3
+    ## Sketch:
+    # Update residuals
+    # compute candidates
+    # Remove orthogonal parts of Xs
+    # sort variables by correlation
+    # Add layer
+    
+    # Note: The residuals are not centered: mean(y.t)    
+    
+    x.t.candid.ind<- rep(1:ncol(x.added), each=ncol(x1))
+    x2.candid.inds<- rep(1:ncol(x1), times=ncol(x.added))
     ## TODO: manage column names to create predictor
-    x.candidate<- x[,x.candid.inds] * x1[,x1.candid.inds]
+        
+    x.candidate<- x.added[, x.t.candid.ind] * x2[, x2.candid.inds] # Candidate predictors
+    x.candidate<- x.candidate - x.t.orth %*% t(x.t.orth) %*% x.candidate # Orthogonal candidate predictors 
+    #round(t(x.candidate) %*% x.t, 3)
+    #round(t(x.candidate) %*% x.t.orth, 3)
     
-    .data<- data.frame(y, x, x.candidate)
-    colnames(.data)<- sprintf("V%d", 1:ncol(.data))
+    x.candidate.svd<- svd(x.candidate)
+    d.ind<- x.candidate.svd$d < .Machine$double.eps
+    x.candidate<- x.candidate %*% x.candidate.svd$v[ ,!d.ind] # Removes colinear predictors
+    #     round(t(x.candidate) %*% x.t, 4)
+    #     checkOrtho(x.candidate)
+    x.candidate<- reNorm(x.candidate)
+    #     checkOrtho(x.candidate)
+        
+
+    x.candidate.ord<- order(abs(t(y.t) %*% x.candidate), decreasing=TRUE) # Order along correlations
+    # abs(t(y.t) %*% x.candidate)[x.candidate.ord]
+    x.added<- x.candidate[, x.candidate.ord[1:widths[i]]] # Select the best candidates
+    #  checkOrtho(x.added); round(t(x.added) %*% x.t, 4); round(t(x.added) %*% x.t.orth, 4)
     
-    x.high.ind<- 2:ncol(x.candidate)
-    form.up.expression<- paste('V1 ~',paste(sprintf("V%d", x.high.ind), collapse="+"))
-    form.up <- as.formula(form.up.expression)
+    x.added.svd<- svd(x.added)
+    x.added.orth<- x.added.svd$u %*% t(x.added.svd$v)
+    # checkOrtho(x.added.orth); round(t(x.added.orth) %*% x.t, 4); round(t(x.added.orth) %*% x.t.orth, 4)
     
-    lm.1<- step(object=lm.1, scope=list(lower=form.low, upper=form.up), direction='forward', steps=widths[i])
+    x.t<- cbind(x.t, x.added) # Update cummulative basis
+    # checkOrtho(x.t)
+    x.t.orth<- cbind(x.t.orth, x.added.orth) # Update orthogonal basis
+    # checkOrtho(x.t.orth)
+    
+    y.t<- y.t- x.added.orth %*% t(x.added.orth) %*% y.t
+    
   }
-  anova(lm.1)
-    
+      
   ## TODO: return rotation matrix and variable construction to allow prediction on new data
   return(list(
-    basis= model.matrix(lm.1)[,-1],
-    svd=x0.svd,
-    formula=NULL    ))
+    basis=x.t,
+    basis.ortho=x.t.orth))
 }
 ## Testing:ִ
 # x.p<- 5

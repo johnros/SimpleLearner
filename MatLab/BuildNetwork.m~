@@ -57,7 +57,7 @@ switch BuildMethodFirstLayer
     otherwise
         error('Unknown BuildMethodFirstLayer');
 end;
-F(:,1:widths(1)) = [ones(size(X,1),1) X]*W;    % F=(1,X)*W
+F(:,1:widths(1)) = [ones(size(X,1),1) X]*W; % F=(1,X)*W
 OF(:,1:widths(1)) = F(1:trainend,1:widths(1)); % OF=F as F is currently orthonormal
 F(:,1:widths(1)) = F(:,1:widths(1))./repmat(sqrt(mean(F(1:trainend,1:widths(1)).^2,1)),size(F,1),1); % Normalize
 clear X;
