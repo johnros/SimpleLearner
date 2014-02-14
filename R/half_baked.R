@@ -1,9 +1,13 @@
 ## Fit model
-svm.slearner<- function(x, y, widths, lambdas=2^(1:6), control=makeControl(), ... ){
+svm.slearner<- function(x, y, widths, train.prop=0.5, lambdas=2^(1:6), control=makeControl(), ... ){
   
-  ### create basis
-  ## TODO: Avoid overfit by optimizing training set.
-  xx<- makeBasis.slearner(x=x, y=y, widths=widths)
+  
+  ### Mark training set:
+  train.ind<- as.logical(rbinom(nrow(x), 1, train.prop))
+  
+  ### create basis=
+  ## TODO: Avoid overfit by optimizing training set (allow subset or crossvalidate)
+  xx<- makeBasis.slearner(x=x[train.ind,], y=y[train.ind,], widths=widths)
   
   ### fit model:
   # Add "type='C'" if svm does not correctly recognize the type:

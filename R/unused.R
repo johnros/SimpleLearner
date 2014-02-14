@@ -79,10 +79,13 @@ length(obj$train.ind)
 control<-   tune.control(sampling = "boot")
 obj <- tune.svm(Species~., data = iris, gamma = 2^(-1:1), cost = 2^(2:4), tunecontrol=control)
 length(obj$train.ind)
-
-
 summary(obj)
 plot(obj)
+
+control<-   tune.control(sampling = "fix")
+train.ind<- as.logical(rbinom(nrow(iris),1,0.2))
+obj <- tune(method=svm,  Species~., data=iris, , validation.x=iris[!train.ind,], gamma = 2^(-1:1), cost = 2^(2:4), tunecontrol=control)
+
 
 
 
