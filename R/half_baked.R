@@ -1,17 +1,16 @@
 ## Fit model
-svm.slearner<- function(x, y, widths, train.prop=0.5, lambdas=2^(1:6), control=makeControl(), ... ){
-  
-  
-  ### Mark training set:
-  train.ind<- as.logical(rbinom(nrow(x), 1, train.prop))
+svm.slearner<- function(x, y, widths, train.ind, lambdas=2^(1:6), control=makeControl(), ... ){
+  stopifnot(isTRUE(nrow(x)==length(y)))
+    
+  if(missing(train.ind)) train.ind<- as.logical(rbinom(nrow(x), 1, 0.5))
   
   ### create basis=
   ## TODO: Avoid overfit by optimizing training set (allow subset or crossvalidate)
-  xx<- makeBasis.slearner(x=x[train.ind,], y=y[train.ind,], widths=widths)
-  
+  xx<- makeBasis.slearner(x=x[train.ind,], y=y[train.ind], widths=widths)
+  xxx<- xx$makeBasis(x)
   ### fit model:
   # Add "type='C'" if svm does not correctly recognize the type:
-  svm.tune <- tune.svm(x=xx$basis, y=y, 
+  svm.tune <- tune.svm(x=xxx, y=y, 
                        kernel='linear', cost = lambdas, 
                        tunecontrol=control$tunecontrol)
   result<-svm.tune 
@@ -19,16 +18,23 @@ svm.slearner<- function(x, y, widths, train.prop=0.5, lambdas=2^(1:6), control=m
   return(result)
 }
 ## Testing:
-## Testing with Ohad's data:
+## Replicating Ohad's example:
 load(file='Package/data/test_data.RData')
 widths<- c(10,10)
 lambdas<-  2^seq(-10,3,length=50) 
-slearner.fit<- svm.slearner(x=test.data$X, y=test.data$Y, 
+debug(svm.slearner)
+train.ind<- rep(FALSE, nrow(test.data$X))
+train.ind[1:250]<- TRUE
+slearner.fit<- svm.slearner(x=test.data$X, y=test.data$Y, train.ind=train.ind,
                             lambdas=lambdas, widths=widths, 
                             control=makeControl(sampling="fix"))
 slearner.fit
-slearner.fit<- svm.slearner(x=test.data$X, y=test.data$Y, 
-                            lambdas=0.001, widths=widths, 
+
+
+## Random training set:
+train.ind<- as.logical(rbinom(nrow(test.data$X), 1, 0.5))
+slearner.fit<- svm.slearner(x=test.data$X, y=test.data$Y, train.ind=train.ind,
+                            lambdas=lambdas, widths=widths, 
                             control=makeControl(sampling="fix"))
 slearner.fit
 
@@ -42,7 +48,6 @@ y.factor<- factor(sign(y))
 widths<- rep(5,10)
 lambdas<- 2^(1:6)
 
-makeBasis.slearner(x=x, y=y, widths=widths)
 slearner.fit<- svm.slearner(x=x, y=y.factor, widths=widths)
 predict(slearner.fit$best.model)
 

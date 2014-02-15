@@ -88,6 +88,12 @@ obj <- tune(method=svm,  Species~., data=iris, , validation.x=iris[!train.ind,],
 
 
 
+#### Playing with polynomials ####
+f1<- poly(1:10, degree=3, raw=TRUE, coefs=c(1,1,1))
+zapsmall(predict(f1, newdata=2))
+
+
+
 
 #### Equivalence of variable selection method ####
 ## Make data:
