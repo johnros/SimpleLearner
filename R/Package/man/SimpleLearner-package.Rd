@@ -2,40 +2,21 @@
 \alias{SimpleLearner-package}
 \alias{SimpleLearner}
 \docType{package}
-\title{
-What the package does (short line)
-~~ package title ~~
-}
-\description{
-More about what it does (maybe more than one line)
-~~ A concise (1-5 lines) description of the package ~~
-}
-\details{
-\tabular{ll}{
-Package: \tab SimpleLearner\cr
-Type: \tab Package\cr
-Version: \tab 1.0\cr
-Date: \tab 2014-02-05\cr
-License: \tab What license is it under?\cr
-}
-~~ An overview of how to use the package, including the most important functions ~~
-}
-\author{
-Who wrote it
+\title{ Basis learner for deep neural networks}
 
-Maintainer: Who to complain to <yourfault@somewhere.net>
-~~ The author and/or maintainer of the package ~~
+\description{ Augments a given basis with a data driven deep neural network architechture described in the reference.}
+\details{
+The package implements the basis augmentation algorithm in the reference. 
+This is done in the \code{\link{makeBasis.slearner}} function.
+The augmented basis, essentially a matrix object, can then be used for any learning algorith.
+Currently, a two class svm learner is implemented by wrapping around \code{\link[e1071]{svm}}.
+}
+
+\author{
+Jonathan Rosenblatt<john.ros.work@gmail.com> based on Matlab code by Ohad Shamir.
+
+Maintainer: Jonathan Rosenblatt <john.ros.work@gmail.com>
 }
 \references{
-~~ Literature or other references for background information ~~
-}
-~~ Optionally other standard keywords, one per line, from file KEYWORDS in the R documentation ~~
-~~ directory ~~
-\keyword{ package }
-\seealso{
-~~ Optional links to other man pages, e.g. ~~
-~~ \code{\link[<pkg>:<pkg>-package]{<pkg>}} ~~
-}
-\examples{
-~~ simple examples of the most important functions ~~
+Livni, Roi, Shai Shalev-Shwartz, and Ohad Shamir. “A Provably Efficient Algorithm for Training Deep Networks.” arXiv:1304.7045 
 }

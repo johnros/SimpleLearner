@@ -1,19 +1,10 @@
 ### Generate X matrix
-## Sketch:
+makeBasis.slearner<- function(x,y, widths, control=makeControl()){
+	## Sketch:
 # Choose first layer by singular values
 # Choose next layers to have good predictive power of validation residuals 
 # and linearly independent of all existing predictors.
-makeBasis.slearner<- function(x,y, widths, control){
-  ## Delete Me:
-#       x.p<- 5
-#       n<- 100
-#       x<- matrix(rnorm(n*x.p),n,x.p, dimnames=list(NULL, LETTERS[1:x.p]))
-#       x.framed<- as.data.frame(x)
-#       .xx<- model.matrix(terms(x=formula(~.^10), data=x.framed), data=x.framed)
-#       y<- .xx %*% runif(ncol(.xx), 0, 30)  + rnorm(nrow(.xx), sd=2)
-#       widths<- rep(4,10)
-#       control<- makeControl()
-
+	
   ## Checks:
   if(any(widths > head(c(1,widths) * ncol(x),-1))) stop("Impossible width value.")
   if(missing(control)) control<- makeControl() 
