@@ -146,31 +146,31 @@ makeBasis.slearner<- function(x,y, widths, control){
     makeBasis=makeBasis))
 }
 ## Testing:ִ
-x.p<- 5
-x<- matrix(rnorm(10000),1000,x.p, dimnames=list(NULL, LETTERS[1:x.p]))
-colnames(x.framed<- as.data.frame(x))
-colnames(.xx<- model.matrix(terms(x=formula(~.^10), data=x.framed), data=x.framed))
-y<- .xx %*% runif(ncol(.xx), 0, 30)  + rnorm(nrow(.xx), sd=2)
-widths<- rep(3,10)
-
-.test<- makeBasis.slearner(x=x, y=y, widths=widths)
-sum(widths)
-dim(.test$basis)
-colnames(.test)
-
-.test.makeBasis<- .test$makeBasis(x)
-anova(lm(y~.test$basis))
-anova(lm(y~.test.makeBasis))
-
-load(file='Package/data/test_data.RData')
-widths<- c(10,10)
-.test<- makeBasis.slearner(x=test.data$X, y=test.data$Y, widths=widths)
-sum(widths)
-dim(.test$basis)
-
-train.ind<- rep(FALSE, nrow(x))
-train.ind[1:250]<- TRUE
-.test<- makeBasis.slearner(x=test.data$X[train.ind,], y=test.data$Y[train.ind], widths=widths)
+# x.p<- 5
+# x<- matrix(rnorm(10000),1000,x.p, dimnames=list(NULL, LETTERS[1:x.p]))
+# colnames(x.framed<- as.data.frame(x))
+# colnames(.xx<- model.matrix(terms(x=formula(~.^10), data=x.framed), data=x.framed))
+# y<- .xx %*% runif(ncol(.xx), 0, 30)  + rnorm(nrow(.xx), sd=2)
+# widths<- rep(3,10)
+# 
+# .test<- makeBasis.slearner(x=x, y=y, widths=widths)
+# sum(widths)
+# dim(.test$basis)
+# colnames(.test)
+# 
+# .test.makeBasis<- .test$makeBasis(x)
+# anova(lm(y~.test$basis))
+# anova(lm(y~.test.makeBasis))
+# 
+# load(file='Package/data/test_data.RData')
+# widths<- c(10,10)
+# .test<- makeBasis.slearner(x=test.data$X, y=test.data$Y, widths=widths)
+# sum(widths)
+# dim(.test$basis)
+# 
+# train.ind<- rep(FALSE, nrow(x))
+# train.ind[1:250]<- TRUE
+# .test<- makeBasis.slearner(x=test.data$X[train.ind,], y=test.data$Y[train.ind], widths=widths)
 
 
 
@@ -193,21 +193,20 @@ svm.slearner<- function(x, y, widths, train.ind, lambdas=2^(1:6), control=makeCo
                        tunecontrol=control$tunecontrol)
   result<-list(fit=svm.tune,
                makeBasis=xx$makeBasis)
-  
+  class(result)<- c("slearner","list")
   return(result)
 }
 ## Testing:
-# ## Replicating Ohad's example:
+## Replicating Ohad's example:
 # load(file='Package/data/test_data.RData')
 # widths<- c(10,10)
 # lambdas<-  2^seq(-10,3,length=50) 
-# debug(svm.slearner)
-# train.ind<- rep(FALSE, nrow(test.data$X))
+# undebug(svm.slearner)
 # train.ind[1:250]<- TRUE
 # slearner.fit<- svm.slearner(x=test.data$X, y=test.data$Y, train.ind=train.ind,
 #                             lambdas=lambdas, widths=widths, 
 #                             control=makeControl(sampling="fix"))
-# slearner.fit
+# predict(slearner.fit)
 # 
 # 
 ## Random training set:
@@ -260,3 +259,21 @@ predict.slearner<- function(slearner, newdata,...){
 # newdata<- x
 # predict.slearner(slearner)
 # predict.slearner(slearner, newdata=newdata)
+
+
+
+
+
+
+
+
+
+summary.slearner<- function(slearner){
+  cat(rep("#",10), "  Tunning Summary  ", rep("#",10), "\n")
+  print(summary(slearner$fit))
+  cat(rep("#",10), "  Best Model  ", rep("#",10), "\n")
+  summary(slearner$fit$best.model)
+}
+## Testing
+# summary.slearner(slearner)
+
