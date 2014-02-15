@@ -191,7 +191,8 @@ svm.slearner<- function(x, y, widths, train.ind, lambdas=2^(1:6), control=makeCo
   svm.tune <- tune.svm(x=xxx, y=y, 
                        kernel='linear', cost = lambdas, 
                        tunecontrol=control$tunecontrol)
-  result<-svm.tune 
+  result<-list(fit=svm.tune,
+               makeBasis=xx$makeBasis)
   
   return(result)
 }
@@ -209,7 +210,7 @@ svm.slearner<- function(x, y, widths, train.ind, lambdas=2^(1:6), control=makeCo
 # slearner.fit
 # 
 # 
-# ## Random training set:
+## Random training set:
 # train.ind<- as.logical(rbinom(nrow(test.data$X), 1, 0.5))
 # slearner.fit<- svm.slearner(x=test.data$X, y=test.data$Y, train.ind=train.ind,
 #                             lambdas=lambdas, widths=widths, 
@@ -227,7 +228,35 @@ svm.slearner<- function(x, y, widths, train.ind, lambdas=2^(1:6), control=makeCo
 # lambdas<- 2^(1:6)
 # 
 # slearner.fit<- svm.slearner(x=x, y=y.factor, widths=widths)
-# predict(slearner.fit$best.model)
+# predict(slearner.fit$$fit$best.model)
 
 
 
+
+
+
+## Predict
+predict.slearner<- function(slearner, newdata,...){
+  if(missing(newdata)) {
+    preds<- predict(slearner$fit$best.model, ...)
+  } else{
+    new.x<- slearner$makeBasis(newdata)
+    preds<- predict(slearner$fit$best.model, newdata=new.x)  
+  }  
+  return(preds)
+}
+### Testing:
+# ## Random training set:
+# x.p<- 5
+# x<- matrix(rnorm(10000), 1000, x.p, dimnames=list(NULL, LETTERS[1:x.p]))
+# x.framed<- as.data.frame(x)
+# .xx<- model.matrix(terms(x=formula(~.^10), data=x.framed), data=x.framed) 
+# y<- .xx %*% runif(ncol(.xx), 0, 30)  + rnorm(nrow(.xx), sd=2)
+# y.factor<- factor(sign(y))
+# widths<- rep(5,10)
+# slearner<- svm.slearner(x=x, y=y.factor, widths=widths)
+# str(slearner)
+# slearner$fit
+# newdata<- x
+# predict.slearner(slearner)
+# predict.slearner(slearner, newdata=newdata)
