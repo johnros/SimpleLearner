@@ -168,7 +168,7 @@ makeBasis.slearner<- function(x,y, widths, control=makeControl()){
 
 
 ## SVM using the basis:
-svm.slearner<- function(x, y, widths, train.ind, lambdas=2^(1:6), control=makeControl(), ... ){
+svm.slearner<- function(x, y, widths, train.ind, lambdas=2^(1:6), tunecontrol=tune.control(sampling="fix"), ... ){
   stopifnot(isTRUE(nrow(x)==length(y)))
   
   if(missing(train.ind)) train.ind<- as.logical(rbinom(nrow(x), 1, 0.5))
@@ -180,10 +180,10 @@ svm.slearner<- function(x, y, widths, train.ind, lambdas=2^(1:6), control=makeCo
   ### fit model:
   # Add "type='C'" if svm does not correctly recognize the type:
   svm.tune <- tune.svm(x=xxx, y=y, 
-                       kernel='linear', cost = lambdas, 
-                       tunecontrol=control$tunecontrol)
-  result<-list(fit=svm.tune,
-               makeBasis=xx$makeBasis)
+                       kernel='linear', cost = lambdas, ...)
+  
+  
+  result<-list(fit=svm.tune, makeBasis=xx$makeBasis)
   class(result)<- c("slearner","list")
   return(result)
 }
@@ -226,12 +226,12 @@ svm.slearner<- function(x, y, widths, train.ind, lambdas=2^(1:6), control=makeCo
 
 
 ## Predict
-predict.slearner<- function(slearner, newdata,...){
+predict.slearner<- function(object, newdata,...){
   if(missing(newdata)) {
-    preds<- predict(slearner$fit$best.model, ...)
+    preds<- predict(object$fit$best.model, ...)
   } else{
-    new.x<- slearner$makeBasis(newdata)
-    preds<- predict(slearner$fit$best.model, newdata=new.x)  
+    new.x<- object$makeBasis(newdata)
+    preds<- predict(object$fit$best.model, newdata=new.x, ...)  
   }  
   return(preds)
 }
@@ -259,11 +259,11 @@ predict.slearner<- function(slearner, newdata,...){
 
 
 
-summary.slearner<- function(slearner){
+summary.slearner<- function(object, ...){
   cat(rep("#",10), "  Tunning Summary  ", rep("#",10), "\n")
-  print(summary(slearner$fit))
+  print(summary(object$fit))
   cat(rep("#",10), "  Best Model  ", rep("#",10), "\n")
-  summary(slearner$fit$best.model)
+  summary(object$fit$best.model)
 }
 ## Testing
 # summary.slearner(slearner)

@@ -33,12 +33,12 @@ Given initial predictors and output variable, the function grows a deep neural n
 
 \value{
 A list including:
-  \item{basis} A matrix object with the augmented basis.
-  \item{makeBasis} A function. Allowing the augmentation of new design matrices.
+  \item{basis}{A matrix object with the augmented basis.}
+  \item{makeBasis}{A function. Allowing the augmentation of new design matrices.}
 }
 
 \references{
-  Livni, Roi, Shai Shalev-Shwartz, and Ohad Shamir. “A Provably Efficient Algorithm for Training Deep Networks.” arXiv:1304.7045 
+  Livni, Roi, Shai Shalev-Shwartz, and Ohad Shamir. "A Provably Efficient Algorithm for Training Deep Networks." arXiv:1304.7045 
 }
 
 \author{
@@ -51,10 +51,10 @@ A list including:
 }
 
 \examples{
- load(file='Package/data/test_data.RData')
+ data('test.data')
  widths<- c(10,10)
  
- train.ind<- rep(FALSE, nrow(x))
+ train.ind<- rep(FALSE, nrow(test.data$X))
  train.ind[1:250]<- TRUE
  .test<- makeBasis.slearner(x=test.data$X[train.ind,], y=test.data$Y[train.ind], widths=widths)
 }

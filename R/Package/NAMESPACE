@@ -1,1 +1,4 @@
-exportPattern("^[[:alpha:]]+")
+export(makeBasis.slearner, svm.slearner, predict.slearner, summary.slearner)
+
+S3method(predict, slearner)
+S3method(summary, slearner)

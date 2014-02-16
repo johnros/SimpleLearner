@@ -1,61 +1,59 @@
 \name{predict.slearner}
 \alias{predict.slearner}
-%- Also NEED an '\alias' for EACH other topic documented here.
+\alias{summary.slearner}
+
 \title{
-%%  ~~function to do ... ~~
+  Predict method for slearner class objects.
 }
+
 \description{
-%%  ~~ A concise (1-5 lines) description of what the function does. ~~
+  Convenience wrappers of common methods for \emph{slearner} class objects.
 }
+
 \usage{
-predict.slearner(slearner, newdata, ...)
+  \method{predict}{slearner}(object, newdata, ...)
+  
+  \method{summary}{slearner}(object, ...)
 }
-%- maybe also 'usage' for other objects documented here.
+
 \arguments{
-  \item{slearner}{
-%%     ~~Describe \code{slearner} here~~
+  \item{object}{
+ An \emph{slearner} class object encapsulating some fitted model with an existing \code{\link{predict}} method.
 }
   \item{newdata}{
-%%     ~~Describe \code{newdata} here~~
+  A numeric design matrix. The number of columns and their ordering has to be the exact same as in the matrix used when fitting the predictor.
 }
   \item{\dots}{
-%%     ~~Describe \code{\dots} here~~
+  Further arguments to be passed to appropriate methods.
 }
-}
-\details{
-%%  ~~ If necessary, more details than the description above ~~
-}
-\value{
-%%  ~Describe the value returned
-%%  If it is a LIST, use
-%%  \item{comp1 }{Description of 'comp1'}
-%%  \item{comp2 }{Description of 'comp2'}
-%% ...
-}
-\references{
-%% ~put references to the literature/web site here ~
-}
-\author{
-%%  ~~who you are~~
-}
-\note{
-%%  ~~further notes~~
 }
 
-%% ~Make other sections like Warning with \section{Warning }{....} ~
+\details{
+  Convenience wrappers around of common methods for \emph{slearner} class objects.
+  The behaviour and output depends on the type of fitted object.
+  
+  If \code{predict} is called on the output of \code{\link{svm.slearner}}, then \code{\link[e1071]{predict.svm}} will be called.
+  
+  If \code{summary} is called on the output of \code{\link{svm.slearner}}, then \code{\link[e1071]{summary.svm}} will be called.
+  
+}
+
+\value{
+  The output of a the appropriate method. 
+}
+
+\author{
+ Jonathan Rosenblatt
+}
+
+
+
 
 \seealso{
-%% ~~objects to See Also as \code{\link{help}}, ~~~
+  \code{\link[e1071]{predict.svm}}, \code{\link[e1071]{summary.svm}}
 }
-\examples{
-##---- Should be DIRECTLY executable !! ----
-##-- ==>  Define data, use random,
-##--	or do  help(data=index)  for the standard data sets.
 
-## The function is currently defined as
-"predict.slearner"
+\examples{
+## See under svm.sleaner()
 }
-% Add one or more standard keywords, see file 'KEYWORDS' in the
-% R documentation directory.
-\keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+

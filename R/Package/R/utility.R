@@ -22,13 +22,11 @@ checkOrtho<- function(A){
 
 ## Create control parameters 
 makeControl<- function(
-  sampling="fix"
-){
+  ){
   ## Initializing:
-  require(e1071)
   
-  return(list(
-    tunecontrol=tune.control(sampling=sampling)
+  
+  return(list(    
   ))
 }
 ## Testing:

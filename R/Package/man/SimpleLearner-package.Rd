@@ -18,5 +18,5 @@ Jonathan Rosenblatt<john.ros.work@gmail.com> based on Matlab code by Ohad Shamir
 Maintainer: Jonathan Rosenblatt <john.ros.work@gmail.com>
 }
 \references{
-Livni, Roi, Shai Shalev-Shwartz, and Ohad Shamir. “A Provably Efficient Algorithm for Training Deep Networks.” arXiv:1304.7045 
+  Livni, Roi, Shai Shalev-Shwartz, and Ohad Shamir. "A Provably Efficient Algorithm for Training Deep Networks." arXiv:1304.7045 
 }

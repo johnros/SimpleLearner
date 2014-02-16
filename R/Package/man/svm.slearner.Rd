@@ -1,73 +1,84 @@
 \name{svm.slearner}
 \alias{svm.slearner}
-%- Also NEED an '\alias' for EACH other topic documented here.
+
 \title{
-%%  ~~function to do ... ~~
+  Fitting an svm classifier with augmented basis.
 }
+
 \description{
-%%  ~~ A concise (1-5 lines) description of what the function does. ~~
+  This is a convenience wrapper around \code{\link[e1071]{svm}} using a deep neural basis grown using \code{\link{makeBasis.slearner}}.
 }
 \usage{
-svm.slearner(x, y, widths, train.ind, lambdas = 2^(1:6), control = makeControl(), ...)
+  svm.slearner(x, y, widths, train.ind, lambdas = 2^(1:6), 
+  tunecontrol=tune.control(sampling="fix"), ...)
 }
-%- maybe also 'usage' for other objects documented here.
+
 \arguments{
   \item{x}{
-%%     ~~Describe \code{x} here~~
+A numeric design matrix.
 }
   \item{y}{
-%%     ~~Describe \code{y} here~~
+The dependent variable. Assumed to be a two class factor.
 }
   \item{widths}{
-%%     ~~Describe \code{widths} here~~
+A numeric vector with the number of nodes in each layer of the deep neural architecture.
 }
   \item{train.ind}{
-%%     ~~Describe \code{train.ind} here~~
+An optional logical vector marking observations to be used for growing the basis.
 }
   \item{lambdas}{
-%%     ~~Describe \code{lambdas} here~~
+A numeric vector of values of the svm regularization parameter passed as the \emph{cost} parameter in \code{\link[e1071]{tune.svm}}.
 }
-  \item{control}{
-%%     ~~Describe \code{control} here~~
+\item{tunecontrol}{
+A control object created by \code{link[e1071]{tune.control}} and passed to \code{\link[e1071]{tune.svm}}
 }
   \item{\dots}{
-%%     ~~Describe \code{\dots} here~~
+Further arguments passed to \code{\link[e1071]{tune.svm}}
 }
 }
+
 \details{
-%%  ~~ If necessary, more details than the description above ~~
+The function initially calls \code{\link{makeBasis.slearner}} to augment the initial design matrix with a deep neural architecture. 
+If \emph{train.ind} is not specified, a random half of the data is used as a training set when growing the network.
+The returned 
 }
 \value{
-%%  ~Describe the value returned
-%%  If it is a LIST, use
-%%  \item{comp1 }{Description of 'comp1'}
-%%  \item{comp2 }{Description of 'comp2'}
-%% ...
+A list including:
+  \item{fit}{An object of class \emph{tune} which is the output of \code{\link[e1071]{tune.svm}} called with the augmented basis.}
+  \item{makeBasis}{A function object. Used by \code{\link{predict.slearner}}.}
 }
+
 \references{
-%% ~put references to the literature/web site here ~
+For the basis augmentation:
+  Livni, Roi, Shai Shalev-Shwartz, and Ohad Shamir. "A Provably Efficient Algorithm for Training Deep Networks." arXiv:1304.7045 
+
+
+For the svm implementation:
+  D. Meyer. Support Vector Machines: The interface to libsvm in Package
+    e1071. Techische Universitat Wien, Austria, 2004.
 }
 \author{
-%%  ~~who you are~~
+Jonathan Rosenblatt
 }
 \note{
-%%  ~~further notes~~
+  This simple function can easily be extended to other types of supervised learning problems.  
 }
-
-%% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-%% ~~objects to See Also as \code{\link{help}}, ~~~
+  \code{\link{makeBasis.slearner}}
 }
-\examples{
-##---- Should be DIRECTLY executable !! ----
-##-- ==>  Define data, use random,
-##--	or do  help(data=index)  for the standard data sets.
 
-## The function is currently defined as
-"svm.slearner"
+\examples{
+  data('test.data')
+  widths<- c(10,10)
+  lambdas<-  2^seq(-10,3,length=50) 
+  train.ind<- rep(FALSE, nrow(test.data$X))
+  train.ind[1:250]<- TRUE
+  slearner.fit<- svm.slearner(x=test.data$X, y=test.data$Y, train.ind=train.ind,
+                               lambdas=lambdas, widths=widths)
+  summary(slearner.fit)
+  predict(slearner.fit)
 }
-% Add one or more standard keywords, see file 'KEYWORDS' in the
-% R documentation directory.
-\keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+
+\keyword{ neural }
+\keyword{ regression }

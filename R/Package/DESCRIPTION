@@ -7,6 +7,6 @@ Author: Jonathan Rosenblatt <john.ros.work@gmail.com>
 Maintainer: Jonathan Rosenblatt <john.ros.work@gmail.com>
 Description: Learns a multilayered feed forward basis.
 Depends:
-    e1701,
+    e1071,
     class
-License: BSD-2
+License: FreeBSD
