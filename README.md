@@ -8,7 +8,7 @@ Installation
 -------------
 ```{r}
 library(devtools)  
-install_github("SimpleLearner", "johnros", subdir='SimpleLearner')
+install_github("SimpleLearner", "johnros", subdir='R/Package')
 library(SimpleLearner)  
 ```
 
