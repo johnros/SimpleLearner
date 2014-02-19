@@ -1,3 +1,7 @@
 - Deal with multiclass y
-- Plot function?
-- Documentation
+- Test on MNIST data
+- Test on Twenty Newsgroups Data Set
+- Add progress bar along layers
+- Use minibatches.
+- Use multicores?
+- Make more efficient vector products?
