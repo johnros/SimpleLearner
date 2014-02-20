@@ -1,12 +1,6 @@
 ### Generate X matrix
 makeBasis.slearner<- function(x,y, widths, export.constructor=TRUE, control=makeControl()){
   ## For debugging:
-  #   load_mnist(dirname='../Data/mnist/')
-  #   train.ind<- as.logical(rbinom(nrow(train$x), 1, 0.2))
-  #   x<- train$x[train.ind,]
-  #   y<- train$y[train.ind]
-  #   widths<- c(10,10,10)
-  
   
   ## Sketch:
   # Choose first layer by singular values
@@ -103,6 +97,7 @@ makeBasis.slearner<- function(x,y, widths, export.constructor=TRUE, control=make
         
         cat(sprintf("Constructed variable %s in layer %s.\n", j, i))
         flush.console()
+        
         j<- j+1        
       }       
     }
@@ -118,6 +113,7 @@ makeBasis.slearner<- function(x,y, widths, export.constructor=TRUE, control=make
     # x.t.names<- c(x.t.names, x.added.names)
     # checkOrtho(x.t)
     
+    ## FIXME: deal with impossibly large width[i] values.
     x.added.svd<- propack.svd(x.added)
     
     x.t.orth<- cbind(x.t.orth, x.added.svd$u %*% t(x.added.svd$v) )
