@@ -25,18 +25,19 @@ load_mnist <- function(dirname) {
     n = readBin(f,'integer',n=1,size=4,endian='big')
     y = readBin(f,'integer',n=n,size=1,signed=F)
     close(f)
-    y
+    as.factor(y)
   }
   
   
-  train <<- load_image_file(sprintf("%strain-images.idx3-ubyte",dirname))
-  test <<- load_image_file(sprintf("%st10k-images.idx3-ubyte",dirname))
+  train <<- load_image_file(sprintf("%strain-images-idx3-ubyte",dirname))
+  test <<- load_image_file(sprintf("%st10k-images-idx3-ubyte",dirname))
   
-  train$y <<- load_label_file(sprintf("%strain-labels.idx1-ubyte",dirname))
-  test$y <<- load_label_file(sprintf("%st10k-labels.idx1-ubyte",dirname))  
+  train$y <<- load_label_file(sprintf("%strain-labels-idx1-ubyte",dirname))
+  test$y <<- load_label_file(sprintf("%st10k-labels-idx1-ubyte",dirname))  
 }
 ## Testing:
 #load_mnist(dirname='../Data/mnist/')
+
 
 
 show_digit <- function(arr784, col=gray(12:1/12), ...) {
