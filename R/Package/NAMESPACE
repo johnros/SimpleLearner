@@ -1,4 +1,4 @@
-export(makeBasis.slearner, svm.slearner, predict.slearner, summary.slearner)
+export(makeBasis.slearner, svm.slearner, predict.slearner, summary.slearner, load_mnist, show_digit)
 
 S3method(predict, slearner)
 S3method(summary, slearner)

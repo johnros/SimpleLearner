@@ -9,5 +9,6 @@ Description: Learns a multilayered feed forward basis.
 Depends:
     e1071,
     class,
-    svd
+    svd,
+    Matrix
 License: FreeBSD
