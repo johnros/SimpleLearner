@@ -9,6 +9,7 @@ svm.slearner<- function(x, y, widths, train.ind, lambdas=2^(1:5),
   y<-train$y
   
   lambdas<- 2^(1:3)
+  tunecontrol<- tune.control(sampling="fix")
   
   
   ## Initialization: 
@@ -24,7 +25,7 @@ svm.slearner<- function(x, y, widths, train.ind, lambdas=2^(1:5),
   xxx<- xx$makeBasis(x)
   ### fit model:
   # Add "type='C'" if svm does not correctly recognize the type:
-  svm.tune <- tune.svm(x=xxx, y=y, kernel='linear', cost = lambdas, ...)
+  svm.tune <- tune.svm(x=xxx, y=y, kernel='linear', cost = lambdas, tunecontrol)
   
   
   result<-list(fit=svm.tune, makeBasis=xx$makeBasis)
