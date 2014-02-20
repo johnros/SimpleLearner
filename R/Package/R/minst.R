@@ -25,7 +25,7 @@ load_mnist <- function(dirname) {
     n = readBin(f,'integer',n=1,size=4,endian='big')
     y = readBin(f,'integer',n=n,size=1,signed=F)
     close(f)
-    y
+    as.factor(y)
   }
   
   
@@ -37,6 +37,7 @@ load_mnist <- function(dirname) {
 }
 ## Testing:
 #load_mnist(dirname='../Data/mnist/')
+
 
 
 show_digit <- function(arr784, col=gray(12:1/12), ...) {

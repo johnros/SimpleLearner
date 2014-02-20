@@ -52,7 +52,7 @@ Y. LeCun, L. Bottou, Y. Bengio, and P. Haffner. "Gradient-based learning applied
 
 
 \examples{
-\donotrun{
+\dontrun{
   load_mnist(dirname='../Data/mnist/')
   show_digit(train$x[5,])
 }
