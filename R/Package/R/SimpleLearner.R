@@ -1,6 +1,13 @@
 ### Generate X matrix
 makeBasis.slearner<- function(x,y, widths, export.constructor=TRUE, control=makeControl()){
   ## For debugging:
+  #   load(file='Package/data/test.data.RData')
+  #   widths<- c(17,10)
+  #   lambdas<-  2^seq(-10,3,length=50) 
+  #   train.ind<- rep(FALSE, nrow(test.data$X))
+  #   train.ind[1:250]<- TRUE
+  #   x<- cbind(test.data$X,test.data$X)
+  #   y<- test.data$Y
   
   ## Sketch:
   # Choose first layer by singular values
@@ -8,14 +15,15 @@ makeBasis.slearner<- function(x,y, widths, export.constructor=TRUE, control=make
   # and linearly independent of all existing predictors.
   
   ## Initialization
-  if(any(widths > head(c(1,widths) * ncol(x),-1))) stop("Impossible width value.")
+  if(any(widths > head(c(1,widths) * ncol(x),-1))) stop("Impossible width values.")
   if(is.factor(y)) y<- as.numeric(as.character(y))
-  
+  widths.returned<- rep(NA, length=length(widths))
   
   
   ## Make first layer:
   x<- cbind(1, x)
-  x.svd<- propack.svd(x, neig =widths[1])
+  rank.layer1<- min(rankMatrix(x), widths[1])
+  x.svd<- propack.svd(x, neig=rank.layer1)
   W<- x.svd$v
   x2 <- x %*% W # Low dimensional X representation (F in Ohad)
   #  checkOrtho(x2[,1:widths[1]]) # Orthogonal but not orthonormal
@@ -23,7 +31,7 @@ makeBasis.slearner<- function(x,y, widths, export.constructor=TRUE, control=make
   x2 <- (x %*% W2) # Low dimensional X representation (F in Ohad)  
   x.2.ncol<- ncol(x2)
   # checkOrtho(x2)   # x2 Orthonormal
-  
+  widths.returned[1]<- rank.layer1
   
   x.added<- x.t<- x.t.orth<- x2 # The cummulating basis
   if(length(unique(y))>2)  y<- sapply(unique(y), function(x) as.numeric(y==x)) 
@@ -39,7 +47,6 @@ makeBasis.slearner<- function(x,y, widths, export.constructor=TRUE, control=make
     y.t<- y.t -  (x.t.orth %*% t(x.t.orth)) %*% y.t # Residuals
   }
   
-  
   cat(sprintf("Layer 1 done.\n"))
   
   bestest<- list()
@@ -50,7 +57,7 @@ makeBasis.slearner<- function(x,y, widths, export.constructor=TRUE, control=make
     # compute candidates
     # Remove orthogonal parts of Xs
     # sort variables by correlation
-    # Add layer
+    
     
     x.t.candid.ind<- rep(1:ncol(x.added), each=x.2.ncol)
     x2.candid.inds<- rep(1:x.2.ncol, times=ncol(x.added))
@@ -102,7 +109,7 @@ makeBasis.slearner<- function(x,y, widths, export.constructor=TRUE, control=make
       }       
     }
     
-    
+    widths.returned[i]<- j-1
     bestest[[i]]<- x.added.indexes
     
     # rankMatrix(x.added,  method="qrLINPACK" )
@@ -120,10 +127,7 @@ makeBasis.slearner<- function(x,y, widths, export.constructor=TRUE, control=make
     
   }
   
-  
-  
-  
-  ### Return basis creating function:
+  # Return basis creating function:
   makeBasis<- NA
   if(export.constructor){
     
@@ -132,7 +136,7 @@ makeBasis.slearner<- function(x,y, widths, export.constructor=TRUE, control=make
       
       ## For debugging:
       # x0.2<- x
-      
+      if(ncol(x0.2)!= nrow(W2)) stop('Wrong dimensions for X matrix')
       x2.2 <- x0.2 %*% W2 # Low dimensional X representation (F in Ohad)  
       
       x.t.2<- x2.2
@@ -179,6 +183,7 @@ makeBasis.slearner<- function(x,y, widths, export.constructor=TRUE, control=make
   
   return(list(
     basis=x.t,
+    widths.returned=widths.returned,
     makeBasis=makeBasis))
 }
 ## Testing:ִ
@@ -212,58 +217,101 @@ makeBasis.slearner<- function(x,y, widths, export.constructor=TRUE, control=make
 
 
 
-## SVM using the basis:
-svm.slearner<- function(x, y, widths, train.ind, lambdas=2^(1:6), 
-                        tunecontrol=tune.control(sampling="fix"), ... ){
-  stopifnot(isTRUE(nrow(x)==length(y)))
+
+
+svm.slearner<- function(x, y, widths, train.ind, 
+                        type=c("fix","cross"), lambdas=2^(1:6), ... ){
+  ## For Debugging:
+  #   load_mnist(dirname='../Data/mnist/')
+  #   train.ind<- as.logical(rbinom(nrow(train$x), 1, 0.7))
+  #   widths<- c(50,600,600)
+  #   x<- train$x
+  #   y<-train$y
+  #   lambdas<- 2^(2:9)
+  #   
   
-  if(missing(train.ind)) train.ind<- as.logical(rbinom(nrow(x), 1, 0.3))
+  ## Initialization: 
+  stopifnot(isTRUE(nrow(x)==length(y)))
+  if(missing(train.ind)) train.ind<- as.logical(rbinom(nrow(x), 1, 0.7))
+  
   
   ### create basis=
-  ## TODO: Avoid overfit by optimizing training set (allow subset or crossvalidate)
   xx<- makeBasis.slearner(x=x[train.ind,], y=y[train.ind], widths=widths)
   xxx<- xx$makeBasis(x)
+  
+  
   ### fit model:
-  # Add "type='C'" if svm does not correctly recognize the type:
-  svm.tune <- tune.svm(x=xxx, y=y, kernel='linear', cost = lambdas, ...)
   
+  # Cross validatd version
+  switch(type,
+         fix={
+           Liblinear.i<- list()
+           Liblinear.miscalss<- rep(NA, length=length(lambdas))
+           for(i in seq(along.with=lambdas)){
+             # i<- 1
+             .temp<- LiblineaR(data=xxx[train.ind,], labels=y[train.ind], type=4, cost=lambdas[i], cross=0)
+             Liblinear.i<- c(Liblinear.i, .temp)
+             
+             .temp.predict<- predict(.temp, newx=xxx[!train.ind,])$predictions
+             misclass<- table(.temp.predict, true=y[!train.ind])
+             misclass.prop<- prop.table(misclass)
+             diag(misclass.prop)<- 0
+             Liblinear.miscalss[i]<- sum(misclass.prop)        
+           }
+           min.ind<- which.min(Liblinear.miscalss)
+         },
+         cross={
+           Liblinear.i<- list()
+           for(i in seq(along.with=lambdas)){
+             .temp<- LiblineaR(data=xxx, labels=y, type=4, cost=lambdas[i], cross=2)
+             Liblinear.i<- c(Liblinear.i, .temp)
+           }  
+           min.ind<- which.min(sapply(Liblinear.i, function(x) 1-x))
+         }
+  ) # end switch
   
-  result<-list(fit=svm.tune, makeBasis=xx$makeBasis)
-  class(result)<- c("slearner","list")
+  Liblinear.1<- LiblineaR(data=xxx, labels=y, type=4, cost=lambdas[min.ind], cross=0)
+  
+  result<-list(
+    fit=Liblinear.1,
+    lambdas=lambdas,
+    type=type,
+    lambda=lambdas[min.ind],
+    widths.requested=widths,
+    widthes.returned=xx$widths.returned,
+    makeBasis=xx$makeBasis)
+  
+  class(result)<- c("slearner", "list")
   return(result)
 }
 ## Testing:
-## Replicating Ohad's example:
-# load(file='Package/data/test_data.RData')
+# Replicating Ohad's example:
+# load(file='Package/data/test.data.RData')
 # widths<- c(10,10)
 # lambdas<-  2^seq(-10,3,length=50) 
 # train.ind<- rep(FALSE, nrow(test.data$X))
 # train.ind[1:250]<- TRUE
-# slearner.fit<- svm.slearner(x=test.data$X, y=test.data$Y, train.ind=train.ind,
-#                             lambdas=lambdas, widths=widths, 
-#                             control=makeControl(sampling="fix"))
-# predict(slearner.fit)
+# slearner.fit<- svm.slearner(x=test.data$X, y=test.data$Y, train.ind=train.ind, type="fix",
+#                             lambdas=lambdas, widths=widths)
+# slearner.fit$fit$
+#   slearner.fit<- svm.slearner(x=test.data$X, y=test.data$Y, train.ind=train.ind,type="cross",
+#                               lambdas=lambdas, widths=widths)
+# slearner.fit$fit$
+#  
+## MNIST data:
+# load_mnist(dirname='../Data/mnist/')
+# train.ind<- as.logical(rbinom(nrow(train$x), 1, 0.3))
+# widths<- c(50,600,600)
+# x<- train$x
+# y<-train$y
+# lambdas<- 2^(2:9)
 # 
-# 
-## Random training set:
-# train.ind<- as.logical(rbinom(nrow(test.data$X), 1, 0.5))
-# slearner.fit<- svm.slearner(x=test.data$X, y=test.data$Y, train.ind=train.ind,
-#                             lambdas=lambdas, widths=widths, 
-#                             control=makeControl(sampling="fix"))
-# slearner.fit
-# 
-# ## Test with my data:
-# x.p<- 5
-# x<- matrix(rnorm(10000), 1000, x.p, dimnames=list(NULL, LETTERS[1:x.p]))
-# x.framed<- as.data.frame(x)
-# .xx<- model.matrix(terms(x=formula(~.^10), data=x.framed), data=x.framed) 
-# y<- .xx %*% runif(ncol(.xx), 0, 30)  + rnorm(nrow(.xx), sd=2)
-# y.factor<- factor(sign(y))
-# widths<- rep(5,10)
-# lambdas<- 2^(1:6)
-# 
-# slearner.fit<- svm.slearner(x=x, y=y.factor, widths=widths)
-# predict(slearner.fit$$fit$best.model)
+# slearner.fit<- svm.slearner(x=x, y=y, train.ind=train.ind, type="fix",
+#                             lambdas=lambdas, widths=widths)
+# slearner.fit<- svm.slearner(x=x, y=y, train.ind=train.ind, type="cross",
+#                             lambdas=lambdas, widths=widths)
+
+
 
 
 
@@ -272,9 +320,9 @@ svm.slearner<- function(x, y, widths, train.ind, lambdas=2^(1:6),
 
 ## Predict
 predict.slearner<- function(object, newx, ...){
-    new.xxx<- object$makeBasis(newx)
-    preds<- predict(object$fit, new.xxx, ...)  
-  }  
+  new.xxx<- object$makeBasis(newx)
+  preds<- predict(object$fit, new.xxx, ...)  
+  
   return(preds)
 }
 ### Testing:
@@ -302,10 +350,11 @@ predict.slearner<- function(object, newx, ...){
 
 
 summary.slearner<- function(object, ...){
-  cat(rep("#",10), "  Tunning Summary  ", rep("#",10), "\n")
-  print(summary(object$fit))
-  cat(rep("#",10), "  Best Model  ", rep("#",10), "\n")
-  summary(object$fit$best.model)
+  ## Layers requestd
+  ## Layers returned
+  ## lambdas scanned
+  ## selection method
+  ## LiblineaR summary
 }
 ## Testing
 # summary.slearner(slearner)
