@@ -1,105 +1,108 @@
 
-svm.slearner<- function(x, y, widths, train.ind, lambdas=2^(1:5), 
-                        kernel='linear',
-                        tunecontrol=tune.control(sampling="fix"), ... ){
+svm.slearner<- function(x, y, widths, train.ind, type=c("fix","cross"), lambdas=2^(1:6), ... ){
   ## For Debugging:
-  load_mnist(dirname='../Data/mnist/')
-  train.ind<- as.logical(rbinom(nrow(train$x), 1, 0.7))
-  widths<- c(50,600,600)
-  x<- train$x
-  y<-train$y
-  
-  lambdas<- 2^(2:6)
-  tunecontrol<- tune.control(sampling="fix")
-  kernel<- 'linear'
-  
+#   load_mnist(dirname='../Data/mnist/')
+#   train.ind<- as.logical(rbinom(nrow(train$x), 1, 0.7))
+#   widths<- c(50,600,600)
+#   x<- train$x
+#   y<-train$y
+#   lambdas<- 2^(2:9)
+#   
   
   ## Initialization: 
   stopifnot(isTRUE(nrow(x)==length(y)))
-  if(missing(train.ind)) train.ind<- as.logical(rbinom(nrow(x), 1, 0.3))
-  
-  
+  if(missing(train.ind)) train.ind<- as.logical(rbinom(nrow(x), 1, 0.7))
   
   
   ### create basis=
-  ## TODO: Avoid overfit by optimizing training set (allow subset or crossvalidate)
   xx<- makeBasis.slearner(x=x[train.ind,], y=y[train.ind], widths=widths)
   xxx<- xx$makeBasis(x)
+  
+  
   ### fit model:
-  # Add "type='C'" if svm does not correctly recognize the type:
   
-  ## FIXME: why cross validation and not fix? 
-  ## FIXME: why 10% error?
+  # Cross validatd version
+  switch(type,
+          fix={
+            Liblinear.i<- list()
+            Liblinear.miscalss<- rep(NA, length=length(lambdas))
+            for(i in seq(along.with=lambdas)){
+              # i<- 1
+              .temp<- LiblineaR(data=xxx[train.ind,], labels=y[train.ind], type=4, cost=lambdas[i], cross=0)
+              Liblinear.i<- c(Liblinear.i, .temp)
+              
+              .temp.predict<- predict(.temp, newx=xxx[!train.ind,])$predictions
+              misclass<- table(.temp.predict, true=y[!train.ind])
+              misclass.prop<- prop.table(misclass)
+              diag(misclass.prop)<- 0
+              Liblinear.miscalss[i]<- sum(misclass.prop)        
+            }
+            min.ind<- which.min(Liblinear.miscalss)
+          },
+          cross={
+            Liblinear.i<- list()
+            for(i in seq(along.with=lambdas)){
+              .temp<- LiblineaR(data=xxx, labels=y, type=4, cost=lambdas[i], cross=2)
+              Liblinear.i<- c(Liblinear.i, .temp)
+            }  
+            min.ind<- which.min(sapply(Liblinear.i, function(x) 1-x))
+          }
+         ) # end switch
   
-  #svm.tune <- tune.svm(x=xxx, y=y, kernel=kernel, cost = lambdas, tunecontrol)
-  svm.tune.2 <- tune(svm, train.x=xxx[train.ind,], train.y=y[train.ind], 
-                   validation.x=xxx[!train.ind,], validation.y=y[!train.ind], 
-                   ranges=list(cost=lambdas),
-                   kernel=kernel, tunecontrol)
+  Liblinear.1<- LiblineaR(data=xxx, labels=y, type=4, cost=lambdas[min.ind], cross=0)
+    
+  result<-list(
+    fit=Liblinear.1, 
+    lambda=lambdas[min.ind],
+    makeBasis=xx$makeBasis)
   
-  svm.tune.2 <- tune(svm, train.x=xxx, train.y=y,  
-                     ranges=list(cost=lambdas),
-                     kernel=kernel, tunecontrol)
-  
-  
-  result<-list(fit=svm.tune, makeBasis=xx$makeBasis)
-  class(result)<- c("slearner","list")
+  class(result)<- c("slearner", "list")
   return(result)
 }
 ## Testing:
-## Replicating Ohad's example:
-# load(file='Package/data/test_data.RData')
-# widths<- c(10,10)
-# lambdas<-  2^seq(-10,3,length=50) 
-# train.ind<- rep(FALSE, nrow(test.data$X))
-# train.ind[1:250]<- TRUE
-# slearner.fit<- svm.slearner(x=test.data$X, y=test.data$Y, train.ind=train.ind,
-#                             lambdas=lambdas, widths=widths, 
-#                             control=makeControl(sampling="fix"))
-# predict(slearner.fit)
-# 
-# 
-## Random training set:
-# train.ind<- as.logical(rbinom(nrow(test.data$X), 1, 0.5))
-# slearner.fit<- svm.slearner(x=test.data$X, y=test.data$Y, train.ind=train.ind,
-#                             lambdas=lambdas, widths=widths, 
-#                             control=makeControl(sampling="fix"))
-# slearner.fit
-# 
-# ## Test with my data:
-# x.p<- 5
-# x<- matrix(rnorm(10000), 1000, x.p, dimnames=list(NULL, LETTERS[1:x.p]))
-# x.framed<- as.data.frame(x)
-# .xx<- model.matrix(terms(x=formula(~.^10), data=x.framed), data=x.framed) 
-# y<- .xx %*% runif(ncol(.xx), 0, 30)  + rnorm(nrow(.xx), sd=2)
-# y.factor<- factor(sign(y))
-# widths<- rep(5,10)
-# lambdas<- 2^(1:6)
-# 
-# slearner.fit<- svm.slearner(x=x, y=y.factor, widths=widths)
-# predict(slearner.fit$$fit$best.model)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# Replicating Ohad's example:
 load(file='Package/data/test.data.RData')
 widths<- c(10,10)
-.test<- makeBasis.slearner(x=test.data$X, y=test.data$Y, widths=widths)
-sum(widths)
-dim(.test$basis)
+lambdas<-  2^seq(-10,3,length=50) 
+train.ind<- rep(FALSE, nrow(test.data$X))
+train.ind[1:250]<- TRUE
+slearner.fit<- svm.slearner(x=test.data$X, y=test.data$Y, train.ind=train.ind, type="fix",
+                            lambdas=lambdas, widths=widths)
+slearner.fit$fit$
+slearner.fit<- svm.slearner(x=test.data$X, y=test.data$Y, train.ind=train.ind,type="cross",
+                            lambdas=lambdas, widths=widths)
+slearner.fit$fit$
+
+  
+predict(slearner.fit, newx=test.data$X)
+# 
+# 
+## MNIST data:
+load_mnist(dirname='../Data/mnist/')
+train.ind<- as.logical(rbinom(nrow(train$x), 1, 0.3))
+widths<- c(50,600,600)
+x<- train$x
+y<-train$y
+lambdas<- 2^(2:9)
+
+slearner.fit<- svm.slearner(x=x, y=y, train.ind=train.ind, type="fix",
+                            lambdas=lambdas, widths=widths)
+slearner.fit<- svm.slearner(x=x, y=y, train.ind=train.ind, type="cross",
+                            lambdas=lambdas, widths=widths)
+
+
+predict(slearner.fit, newx=x[1:10,])
+
+
+
+
+
+
+
+
+
+
+
 
 
 

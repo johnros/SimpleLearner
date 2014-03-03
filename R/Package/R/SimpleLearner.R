@@ -271,12 +271,9 @@ svm.slearner<- function(x, y, widths, train.ind, lambdas=2^(1:6),
 
 
 ## Predict
-predict.slearner<- function(object, newdata,...){
-  if(missing(newdata)) {
-    preds<- predict(object$fit$best.model, ...)
-  } else{
-    new.x<- object$makeBasis(newdata)
-    preds<- predict(object$fit$best.model, newdata=new.x, ...)  
+predict.slearner<- function(object, newx, ...){
+    new.xxx<- object$makeBasis(newx)
+    preds<- predict(object$fit, new.xxx, ...)  
   }  
   return(preds)
 }

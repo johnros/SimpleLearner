@@ -8,6 +8,7 @@ Maintainer: Jonathan Rosenblatt <john.ros.work@gmail.com>
 Description: Learns a multilayered feed forward basis.
 Depends:
     e1071,
+    LiblineaR,
     class,
     svd,
     Matrix
