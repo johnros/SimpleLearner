@@ -4,12 +4,12 @@ svm.slearner<- function(x, y, widths, train.ind, lambdas=2^(1:5),
                         tunecontrol=tune.control(sampling="fix"), ... ){
   ## For Debugging:
   load_mnist(dirname='../Data/mnist/')
-  train.ind<- as.logical(rbinom(nrow(train$x), 1, 0.7))
-  widths<- c(50,600,600)
+  train.ind<- as.logical(rbinom(nrow(train$x), 1, 0.1))
+  widths<- c(50,100,100)
   x<- train$x
   y<-train$y
   
-  lambdas<- 2^(2:6)
+  lambdas<- 2^(-1:5)
   tunecontrol<- tune.control(sampling="fix")
   kernel<- 'linear'
   
@@ -28,14 +28,17 @@ svm.slearner<- function(x, y, widths, train.ind, lambdas=2^(1:5),
   ### fit model:
   # Add "type='C'" if svm does not correctly recognize the type:
   
-  ## FIXME: why cross validation and not fix? 
-  ## FIXME: why 10% error?
-  
   #svm.tune <- tune.svm(x=xxx, y=y, kernel=kernel, cost = lambdas, tunecontrol)
+  
   svm.tune.2 <- tune(svm, train.x=xxx[train.ind,], train.y=y[train.ind], 
                    validation.x=xxx[!train.ind,], validation.y=y[!train.ind], 
                    ranges=list(cost=lambdas),
                    kernel=kernel, tunecontrol)
+  
+  svm.tune.2 <- tune(svm, train.x=xxx[train.ind,], train.y=y[train.ind], 
+                     validation.x=xxx[!train.ind,], validation.y=y[!train.ind], 
+                     ranges=list(cost=lambdas),
+                     kernel=kernel)
   
   svm.tune.2 <- tune(svm, train.x=xxx, train.y=y,  
                      ranges=list(cost=lambdas),
