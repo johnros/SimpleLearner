@@ -220,7 +220,7 @@ makeBasis.slearner<- function(x,y, widths, export.constructor=TRUE, control=make
 
 
 svm.slearner<- function(x, y, widths, train.ind, 
-                        type=c("fix","cross"), lambdas=2^(1:6), ... ){
+                        type=c("fix","cross"), lambdas=2^(1:6), folds=2, ... ){
   ## For Debugging:
   #   load_mnist(dirname='../Data/mnist/')
   #   train.ind<- as.logical(rbinom(nrow(train$x), 1, 0.7))
@@ -260,10 +260,12 @@ svm.slearner<- function(x, y, widths, train.ind,
            }
            min.ind<- which.min(Liblinear.miscalss)
          },
+         
+         
          cross={
            Liblinear.i<- list()
            for(i in seq(along.with=lambdas)){
-             .temp<- LiblineaR(data=xxx, labels=y, type=4, cost=lambdas[i], cross=2)
+             .temp<- LiblineaR(data=xxx, labels=y, type=4, cost=lambdas[i], cross=folds)
              Liblinear.i<- c(Liblinear.i, .temp)
            }  
            min.ind<- which.min(sapply(Liblinear.i, function(x) 1-x))
@@ -273,12 +275,13 @@ svm.slearner<- function(x, y, widths, train.ind,
   Liblinear.1<- LiblineaR(data=xxx, labels=y, type=4, cost=lambdas[min.ind], cross=0)
   
   result<-list(
+    call=match.call(),
     fit=Liblinear.1,
     lambdas=lambdas,
     type=type,
     lambda=lambdas[min.ind],
     widths.requested=widths,
-    widthes.returned=xx$widths.returned,
+    widths.returned=xx$widths.returned,
     makeBasis=xx$makeBasis)
   
   class(result)<- c("slearner", "list")
@@ -349,13 +352,21 @@ predict.slearner<- function(object, newx, ...){
 
 
 
-summary.slearner<- function(object, ...){
+summary.slearner<- function(object){
+  #object<- slearner.fit
+  ## Call
+  cat("\nCall:\n", paste(deparse(object$call), sep="\n", collapse = "\n"), "\n", sep = "")
   ## Layers requestd
+  cat("\nLayers requested: ", paste(object$widths.requested, sep="\n", collapse = ","), "\n", sep = "")
   ## Layers returned
+  cat("\nLayers learned: ", paste(object$widths.returned, sep="\n", collapse = ","), "\n", sep = "")
   ## lambdas scanned
-  ## selection method
-  ## LiblineaR summary
+  cat("\nLambdas considered: ", zapsmall(object$lambdas),"\n")
+  ## Lambda chosen
+  cat("\nLambda selected: ", object$lambda,"\n")
+  ### LiblineaR summary
+  # Number of classes:
+  cat("\nNumber of classes to learn: ",object$fit$NbClass,"\n")
 }
 ## Testing
-# summary.slearner(slearner)
-
+# summary(slearner)
