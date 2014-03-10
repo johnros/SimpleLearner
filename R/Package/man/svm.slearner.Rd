@@ -6,46 +6,42 @@
 }
 
 \description{
-  This is a convenience wrapper around \code{\link[e1071]{svm}} using a deep neural basis grown using \code{\link{makeBasis.slearner}}.
+  A convenience wrapper around \code{\link[LiblineaR]{LiblineaR}} using a deep neural basis grown using \code{\link{makeBasis.slearner}}.
 }
 \usage{
-  svm.slearner(x, y, widths, train.ind, lambdas = 2^(1:6), 
-  tunecontrol=tune.control(sampling="fix"), ...)
+  svm.slearner(x, y, widths, train.ind, type = c("fix", "cross"),
+                 lambdas = 2^(1:6), folds = 2, ...)
 }
 
 \arguments{
-  \item{x}{
-A numeric design matrix.
+  \item{x}{A numeric design matrix.}
+  \item{y}{The dependent variable. Assumed to be a two class factor.}
+  \item{widths}{A numeric vector with the number of nodes in each layer of the deep neural architecture.}
+  \item{train.ind}{An optional logical vector marking observations to be used for growing the basis.
 }
-  \item{y}{
-The dependent variable. Assumed to be a two class factor.
-}
-  \item{widths}{
-A numeric vector with the number of nodes in each layer of the deep neural architecture.
-}
-  \item{train.ind}{
-An optional logical vector marking observations to be used for growing the basis.
-}
-  \item{lambdas}{
-A numeric vector of values of the svm regularization parameter passed as the \emph{cost} parameter in \code{\link[e1071]{tune.svm}}.
-}
-\item{tunecontrol}{
-A control object created by \code{link[e1071]{tune.control}} and passed to \code{\link[e1071]{tune.svm}}
-}
-  \item{\dots}{
-Further arguments passed to \code{\link[e1071]{tune.svm}}
-}
-}
+\item{type}{Controls the type of validation. See Details.}
+  \item{lambdas}{A numeric vector of values of the svm regularization parameter passed as the \emph{cost} parameter in \code{\link[LiblineaR]{LiblineaR}}}.
+  \item{folds}{The number of cross validation folds in case \code{type="cross"}.}
+  \item{\dots}{Further arguments passed to \code{\link[LiblineaR]{LiblineaR}}.}
+  }
+
 
 \details{
 The function initially calls \code{\link{makeBasis.slearner}} to augment the initial design matrix with a deep neural architecture. 
-If \emph{train.ind} is not specified, a random half of the data is used as a training set when growing the network.
-The returned 
-}
+If \code{type="fix"} is set, a train-test validation will be performed with \emph{train.ind} marking the training and test data. If missing, a random half-split will be used.
+If \code{type="cross"}, a cross validation of the error will be performed with the number of folds specified in \code{folds}.}
+
 \value{
 A list including:
-  \item{fit}{An object of class \emph{tune} which is the output of \code{\link[e1071]{tune.svm}} called with the augmented basis.}
-  \item{makeBasis}{A function object. Used by \code{\link{predict.slearner}}.}
+  \item{call}{The function call.}
+  \item{fit}{A \code{\link[LiblineaR]{LiblineaR}} class object with the fitted model.}
+  \item{lambdas}{The lambda values considered.}
+  \item{type}{Train-test or cross validated.}
+  \item{lambda}{The selected tunning parameter value.}
+  \item{CV.misclass}{The test error rate.}
+  \item{widths.requested}{The desired network architechture.}
+  \item{widths.returned}{The fitted network architechture.}
+  \item{makeBasis}{A function class object inteded to build the fitted network on new X matrices}
 }
 
 \references{
@@ -54,18 +50,17 @@ For the basis augmentation:
 
 
 For the svm implementation:
-  D. Meyer. Support Vector Machines: The interface to libsvm in Package
-    e1071. Techische Universitat Wien, Austria, 2004.
+  R.-E. Fan, K.-W. Chang, C.-J. Hsieh, X.-R. Wang, and C.-J. Lin. LIBLINEAR: A library for large linear classification Journal of Machine Learning Research 9(2008), 1871-1874.
 }
 \author{
 Jonathan Rosenblatt
 }
 \note{
-  This simple function can easily be extended to other types of supervised learning problems.  
+  An extension of the learning algorithm can easilly be extended by construcring the X matrix using \code{\link{makeBasis.slearner}} and then plugging it in any other learning strategy.
 }
 
 \seealso{
-  \code{\link{makeBasis.slearner}}
+  \code{\link{makeBasis.slearner}}, \code{\link{summary.slearner}}, \code{\link{predict.slearner}}
 }
 
 \examples{
@@ -78,6 +73,18 @@ Jonathan Rosenblatt
                                lambdas=lambdas, widths=widths)
   summary(slearner.fit)
   predict(slearner.fit)
+  
+  \dontrun{
+    rm(list=ls())
+    load_mnist(dirname='../Data/mnist/')
+    train.ind<- as.logical(rbinom(nrow(train$x), 1, 0.7))
+    widths<- c(50,600,600)
+    lambdas<-  2^seq(-2,6,length=50) 
+    slearner.fit<- svm.slearner(x=train$x, y=train$y, train.ind=train.ind,
+                                type="fix", lambdas=lambdas, widths=widths)
+    predict(slearner.fit, newx=train$x)
+    summary(slearner.fit)
+  }
 }
 
 \keyword{ neural }

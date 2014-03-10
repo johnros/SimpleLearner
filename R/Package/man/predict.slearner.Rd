@@ -11,16 +11,16 @@
 }
 
 \usage{
-  \method{predict}{slearner}(object, newdata, ...)
+  \method{predict}{slearner}(object, newx, ...)
   
-  \method{summary}{slearner}(object, ...)
+  \method{summary}{slearner}(object,...)
 }
 
 \arguments{
   \item{object}{
  An \emph{slearner} class object encapsulating some fitted model with an existing \code{\link{predict}} method.
 }
-  \item{newdata}{
+  \item{newx}{
   A numeric design matrix. The number of columns and their ordering has to be the exact same as in the matrix used when fitting the predictor.
 }
   \item{\dots}{

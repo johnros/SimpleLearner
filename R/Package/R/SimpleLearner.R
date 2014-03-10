@@ -235,7 +235,7 @@ svm.slearner<- function(x, y, widths, train.ind,
   
   ## Initialization: 
   stopifnot(isTRUE(nrow(x)==length(y)))
-  if(missing(train.ind)) train.ind<- as.logical(rbinom(nrow(x), 1, 0.7))
+  if(type=='fix' && missing(train.ind)) train.ind<- as.logical(rbinom(nrow(x), 1, 0.5))
   
   
   ### create basis=
@@ -361,7 +361,7 @@ predict.slearner<- function(object, newx, ...){
 
 
 
-summary.slearner<- function(object){
+summary.slearner<- function(object,...){
   #object<- slearner.fit
   ## Call
   cat("\nCall:\n", paste(deparse(object$call), sep="\n", collapse = "\n"), "\n", sep = "")

@@ -22,6 +22,7 @@ rm(list=ls())
 load_mnist(dirname='../Data/mnist/')
 train.ind<- as.logical(rbinom(nrow(train$x), 1, 0.7))
 widths<- c(50,600,600)
+widths<- c(50,10,10)
 lambdas<-  2^seq(-2,6,length=50) 
 slearner.fit<- svm.slearner(x=train$x, y=train$y, train.ind=train.ind,
                             type="fix", lambdas=lambdas, widths=widths)
