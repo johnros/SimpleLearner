@@ -11,5 +11,6 @@ Imports:
   class,
   svd,
   Matrix,
-  fortunes
+  fortunes,
+  irlba
 License: FreeBSD

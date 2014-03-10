@@ -5,7 +5,7 @@ rm(list=ls())
 library(SimpleLearner)
 load(file='Package/data/test.data.RData')
 widths<- c(10,10)
-lambdas<-  2^seq(1,6,length=50) 
+lambdas<-  2^seq(1,10,length=50) 
 train.ind<- rep(FALSE, nrow(test.data$X))
 train.ind[1:250]<- TRUE
 slearner.fit<- svm.slearner(x=test.data$X, y=test.data$Y, train.ind=train.ind,
@@ -20,12 +20,27 @@ summary(slearner.fit)
 ## Testing with MNIST data:
 rm(list=ls())
 load_mnist(dirname='../Data/mnist/')
-train.ind<- as.logical(rbinom(nrow(train$x), 1, 0.7))
+train.ind<- as.logical(rbinom(nrow(train$x), 1, 0.2))
 widths<- c(50,600,600)
-widths<- c(50,10,10)
+widths<- c(10,10,10)
 lambdas<-  2^seq(-2,6,length=50) 
+slearner.fit<- svm.slearner(x=train$x[train.ind,], y=train$y[train.ind],
+                            type="fix", lambdas=lambdas, widths=widths)
+predict(slearner.fit, newx=train$x)
+summary(slearner.fit)
+
+
 slearner.fit<- svm.slearner(x=train$x, y=train$y, train.ind=train.ind,
                             type="fix", lambdas=lambdas, widths=widths)
+predict(slearner.fit, newx=train$x)
+summary(slearner.fit)
+
+
+
+
+
+slearner.fit<- svm.slearner(x=train$x[train.ind,], y=train$y[train.ind],
+                            type="cross", lambdas=lambdas, widths=widths)
 predict(slearner.fit, newx=train$x)
 summary(slearner.fit)
 

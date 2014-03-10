@@ -1,13 +1,13 @@
 ### Generate X matrix
 makeBasis.slearner<- function(x,y, widths, export.constructor=TRUE, control=makeControl()){
   ## For debugging:
-    load(file='Package/data/test.data.RData')
-    widths<- c(17,10)
-    lambdas<-  2^seq(-10,3,length=50) 
-    train.ind<- rep(FALSE, nrow(test.data$X))
-    train.ind[1:250]<- TRUE
-    x<- cbind(test.data$X,test.data$X)
-    y<- test.data$Y
+  #     load(file='Package/data/test.data.RData')
+  #     widths<- c(17,10)
+  #     lambdas<-  2^seq(-10,3,length=50) 
+  #     train.ind<- rep(FALSE, nrow(test.data$X))
+  #     train.ind[1:250]<- TRUE
+  #     x<- cbind(test.data$X,test.data$X)
+  #     y<- test.data$Y
   
   
   
@@ -150,7 +150,7 @@ makeBasis.slearner<- function(x,y, widths, export.constructor=TRUE, control=make
       x.added.2<- x2.2
       
       x.t.2.svd<- propack.svd(x.t.2)
-      #x.t.2.svd<- irlba(x.t.2)
+      #x.t.2.svd<- irlba(x.t.2, nu=ncol(x.t.2), nv=ncol(x.t.2))
       
       x.added.ortho.2<- x.t.ortho.2<- x.t.2.svd$u %*% t(x.t.2.svd$v)
       # checkOrtho(x.t.ortho.2)
@@ -243,7 +243,7 @@ svm.slearner<- function(x, y, widths, train.ind,
   
   ## Initialization: 
   stopifnot(isTRUE(nrow(x)==length(y)))
-  if(type=='fix' && missing(train.ind)) train.ind<- as.logical(rbinom(nrow(x), 1, 0.5))
+  if(missing(train.ind)) train.ind<- as.logical(rbinom(nrow(x), 1, 0.5))
   
   ### create basis=
   xx<- makeBasis.slearner(x=x[train.ind,], y=y[train.ind], widths=widths)
