@@ -43,30 +43,29 @@ tol = 10^(-9); % Coarse tolerance bound to avoid rounding errors
 
 fprintf('Building F for widths: [');    fprintf('%d ', widths);    fprintf(']\n');
 X = X(:,sum(abs(X),1)>0); % eliminate zero coordinates
-
-in = Y(1:trainend); clear Y; % Just need the training coordinates
+Ytrain = Y(1:trainend); clear Y; % Just need the training coordinates
 classLabels = unique(Ytrain);
-F = zeros(size(X,1),sum(widths)); % Initialize cummulative basis with intercept.
-OF = zeros(trainend,size(F,2)); % Initialize orthnormalized cummulating basis.
+F = zeros(size(X,1),sum(widths));
+OF = zeros(trainend,size(F,2)); % Maintain orthonormal basis of F.
 
 % Create input layer
 switch BuildMethodFirstLayer
     case 'exact'
-        W = orthonormalize([ones(trainend,1) X(1:trainend,:)],widths(1)); % SVD of (1,X) using only widths(1) singular values.
+        W = orthonormalize([ones(trainend,1) X(1:trainend,:)],widths(1));
     case 'approx'
         W = orthonormalize_approx([ones(trainend,1) X(1:trainend,:)],widths(1));
     otherwise
         error('Unknown BuildMethodFirstLayer');
 end;
-F(:,1:widths(1)) = [ones(size(X,1),1) X]*W;    % F=(1,X)*W
-OF(:,1:widths(1)) = F(1:trainend,1:widths(1)); % OF=F as F is currently orthonormal
+F(:,1:widths(1)) = [ones(size(X,1),1) X]*W;
+OF(:,1:widths(1)) = F(1:trainend,1:widths(1));
 F(:,1:widths(1)) = F(:,1:widths(1))./repmat(sqrt(mean(F(1:trainend,1:widths(1)).^2,1)),size(F,1),1); % Normalize
 clear X;
 
 % Create intermediate layers
 for t=2:length(widths)
-    beginThis = sum(widths(1:t-1))+1; % First index of *current* layer.
-    beginLast = sum(widths(1:t-2))+1; % First index of *previous* layer.
+    beginThis = sum(widths(1:t-1))+1; % Column of F where this layer should go to.
+    beginLast = sum(widths(1:t-2))+1;
     if (length(classLabels)>2) % Multiclass: create indicator matrix Vfor class types
         V = zeros(trainend,length(classLabels));
         for i=1:length(classLabels)
@@ -74,40 +73,29 @@ for t=2:length(widths)
         end;
     else % Binary: create sign vector V representing class
         V = sign((Ytrain==classLabels(1))-0.1);
-    end; % Close creation of V
-
-    V = V - OF(:,1:beginThis-1)*(OF(:,1:beginThis-1)'*V); # Residuals after 1st layer
-
+    end;
+    V = V - OF(:,1:beginThis-1)*(OF(:,1:beginThis-1)'*V);
     r = beginThis;
-    while r <= beginThis+widths(t)-1 % Selectes variables with good predictive power for current layer.
-
-        scores = zeros(widths(1),widths(t-1)); 
+    while r <= beginThis+widths(t)-1 % Begin mini-batch constructions
+        scores = zeros(widths(1),widths(t-1)); %Score for each product of elements in first and last constructed layers
         OV = orth(V);
-
-        for i=1:widths(1) % Compute preformance of variables - one at a time
+        for i=1:widths(1) % Compute scores - one row of the scores matrix at a time
             Ci = repmat(F(1:trainend,i),1,widths(t-1)).*F(1:trainend,beginLast:beginThis-1);
-            Ci = Ci-OF(:,1:r-1)*(OF(:,1:r-1)'*Ci); % Orthogonal to current predictors.
-
-            normCi = sqrt(sum(Ci.^2,1)); 
-            Ci = Ci./repmat(normCi,trainend,1); % Candidates in unit sphere.
-
-            scores(i,:) = sum((OV'*Ci).^2,1); % Compute the score of candidate
+            Ci = Ci-OF(:,1:r-1)*(OF(:,1:r-1)'*Ci);
+            normCi = sqrt(sum(Ci.^2,1));
+            Ci = Ci./repmat(normCi,trainend,1);
+            scores(i,:) = sum((OV'*Ci).^2,1);
             scores(i,normCi<tol) = -inf; % Exclude vectors in (or almost in) the span of OF
-        end; % End creation of current layer (r index)
-
-
-
-        [~,inds] = sort(reshape(scores,1,numel(scores)),'descend'); % Rank correlations
-        [I J] = ind2sub(size(scores),inds); % extract indexes according to scores
-        numNewColumns = min(batchSize,beginThis+widths(t)-r); % Count number of chosen variables.
+        end;
+        [~,inds] = sort(reshape(scores,1,numel(scores)),'descend');
+        [I J] = ind2sub(size(scores),inds);
+        numNewColumns = min(batchSize,beginThis+widths(t)-r);
         Cchosen = zeros(trainend,numNewColumns);
         OC = zeros(size(Cchosen));
         l=1;
-        ind = 1; % Select single promising variables (one if batchSize=1)
-
-        while (l<=numNewColumns) % Add selected variables 
-            F(:,r-1+l) = F(:,I(ind)).*F(:,beginLast+J(ind)-1); % Recompute value of variable and add to F (whole variable, not only training)
-
+        ind = 1;
+        while (l<=numNewColumns)
+            F(:,r-1+l) = F(:,I(ind)).*F(:,beginLast+J(ind)-1);
             Cchosen(:,l) = F(1:trainend,r-1+l);
             OC(:,l) = Cchosen(:,l)-OF(:,1:r-1)*(OF(:,1:r-1)'*Cchosen(:,l));
             OC(:,l) = OC(:,l)-OC(:,1:l-1)*(OC(:,1:l-1)'*OC(:,l));
@@ -117,7 +105,6 @@ for t=2:length(widths)
                 F(:,r-1+l) = F(:,r-1+l)/sqrt(mean(F(1:trainend,r-1+l).^2));
                 l = l+1;
             end;
-
             ind = ind + 1;
             if (ind > length(I)) % Exhausted all candidate vectors
                 if (l==1) % No candidates at all found
@@ -127,8 +114,7 @@ for t=2:length(widths)
                 end;
                 break;
             end;
-        end; % End while loop adding new variables.
-
+        end;
         if (normOCl > tol) % If l was again incremented in last loop previously
             l = l-1;
         end;
@@ -137,5 +123,5 @@ for t=2:length(widths)
         r = r + l;
         %OF(:,1:r-1) = orth(OF(:,1:r-1)); % possibly re-orthogonalize for numerical stability
         fprintf('Built %d out of %d elements in layer %d\n',min(widths(t),r-beginThis),widths(t),t);
-    end; % Close creation of current layer (r index)
-end; % Close creation of multiple layers (t index)
+    end;
+end;

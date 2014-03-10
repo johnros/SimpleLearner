@@ -10,5 +10,6 @@ Depends:
     LiblineaR,
     class,
     svd,
-    Matrix
+    Matrix,
+    fortunes
 License: FreeBSD

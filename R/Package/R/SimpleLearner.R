@@ -22,7 +22,7 @@ makeBasis.slearner<- function(x,y, widths, export.constructor=TRUE, control=make
   
   ## Make first layer:
   x<- cbind(1, x)
-  rank.layer1<- min(rankMatrix(x), widths[1])
+  rank.layer1<- min(rankMatrix(x, method="qrLINPACK"), widths[1])
   x.svd<- propack.svd(x, neig=rank.layer1)
   W<- x.svd$v
   x2 <- x %*% W # Low dimensional X representation (F in Ohad)
@@ -130,6 +130,9 @@ makeBasis.slearner<- function(x,y, widths, export.constructor=TRUE, control=make
   # Return basis creating function:
   makeBasis<- NA
   if(export.constructor){
+    
+    cat("Exporting basis constructor function.\n")
+    fortune()
     
     makeBasis<- function(x){
       x0.2<- cbind(1, x)
@@ -253,22 +256,22 @@ svm.slearner<- function(x, y, widths, train.ind,
              Liblinear.i<- c(Liblinear.i, .temp)
              
              .temp.predict<- predict(.temp, newx=xxx[!train.ind,])$predictions
-             misclass<- table(.temp.predict, true=y[!train.ind])
-             misclass.prop<- prop.table(misclass)
-             diag(misclass.prop)<- 0
-             Liblinear.miscalss[i]<- sum(misclass.prop)        
+             Liblinear.miscalss[i]<- mean(.temp.predict!=y[!train.ind])        
            }
            min.ind<- which.min(Liblinear.miscalss)
+           cv.misclass<- Liblinear.miscalss[[min.ind]]
+           
          },
          
          
          cross={
            Liblinear.i<- list()
            for(i in seq(along.with=lambdas)){
-             .temp<- LiblineaR(data=xxx, labels=y, type=4, cost=lambdas[i], cross=folds)
+             .temp<- 1- LiblineaR(data=xxx, labels=y, type=4, cost=lambdas[i], cross=folds)
              Liblinear.i<- c(Liblinear.i, .temp)
            }  
-           min.ind<- which.min(sapply(Liblinear.i, function(x) 1-x))
+           min.ind<- which.min(sapply(Liblinear.i, function(x) x))
+           cv.misclass<- Liblinear.i[[min.ind]]
          }
   ) # end switch
   
@@ -280,6 +283,7 @@ svm.slearner<- function(x, y, widths, train.ind,
     lambdas=lambdas,
     type=type,
     lambda=lambdas[min.ind],
+    CV.misclass=cv.misclass,
     widths.requested=widths,
     widths.returned=xx$widths.returned,
     makeBasis=xx$makeBasis)
@@ -364,6 +368,8 @@ summary.slearner<- function(object){
   cat("\nLambdas considered: ", zapsmall(object$lambdas),"\n")
   ## Lambda chosen
   cat("\nLambda selected: ", object$lambda,"\n")
+  ## CV accuracy:
+  cat("\nTest misclassification: ", object$CV.misclass,"\n")
   ### LiblineaR summary
   # Number of classes:
   cat("\nNumber of classes to learn: ",object$fit$NbClass,"\n")
