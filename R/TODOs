@@ -1,7 +1,2 @@
-- Deal with multiclass y
-- Test on MNIST data
-- Test on Twenty Newsgroups Data Set
-- Add progress bar along layers
-- Use minibatches.
 - Use multicores?
-- Make more efficient vector products?
+- Use approximate svd

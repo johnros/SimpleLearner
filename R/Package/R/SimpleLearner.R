@@ -1,13 +1,13 @@
 ### Generate X matrix
 makeBasis.slearner<- function(x,y, widths, export.constructor=TRUE, control=makeControl()){
   ## For debugging:
-  #   load(file='Package/data/test.data.RData')
-  #   widths<- c(17,10)
-  #   lambdas<-  2^seq(-10,3,length=50) 
-  #   train.ind<- rep(FALSE, nrow(test.data$X))
-  #   train.ind[1:250]<- TRUE
-  #   x<- cbind(test.data$X,test.data$X)
-  #   y<- test.data$Y
+    load(file='Package/data/test.data.RData')
+    widths<- c(17,10)
+    lambdas<-  2^seq(-10,3,length=50) 
+    train.ind<- rep(FALSE, nrow(test.data$X))
+    train.ind[1:250]<- TRUE
+    x<- cbind(test.data$X,test.data$X)
+    y<- test.data$Y
   
   
   
@@ -25,7 +25,12 @@ makeBasis.slearner<- function(x,y, widths, export.constructor=TRUE, control=make
   ## Make first layer:
   x<- cbind(1, x)
   rank.layer1<- min(rankMatrix(x, method="qrLINPACK"), widths[1])
+  
   x.svd<- propack.svd(x, neig=rank.layer1)
+  #x.svd<- irlba(x, nu=rank.layer1, sigma='ls')
+  
+  
+  
   W<- x.svd$v
   x2 <- x %*% W # Low dimensional X representation (F in Ohad)
   #  checkOrtho(x2[,1:widths[1]]) # Orthogonal but not orthonormal
@@ -81,9 +86,6 @@ makeBasis.slearner<- function(x,y, widths, export.constructor=TRUE, control=make
       
       if(x.candidate.cor[x.candidate.ord] < .Machine$double.eps) break()
       
-      #   candidate.svd<- svd(cbind(x.candidate[, x.candidate.ord], x.added))
-      #   candidate.svd<- propack.svd(cbind(x.candidate[, x.candidate.ord], x.added))
-      #   candidate.rank<- sum(candidate.svd$d>.Machine$double.eps)
       candidate.rank<- rankMatrix(cbind(x.candidate[, x.candidate.ord], x.added), method="qrLINPACK" )
       
       if(j>1 && candidate.rank < (ncol(x.added)+1)){ 
@@ -122,6 +124,7 @@ makeBasis.slearner<- function(x,y, widths, export.constructor=TRUE, control=make
     # checkOrtho(x.t)
     
     x.added.svd<- propack.svd(x.added)
+    #x.added.svd<- irlba(x.added)
     
     x.t.orth<- cbind(x.t.orth, x.added.svd$u %*% t(x.added.svd$v) )
     
@@ -130,6 +133,7 @@ makeBasis.slearner<- function(x,y, widths, export.constructor=TRUE, control=make
   # Return basis creating function:
   makeBasis<- NA
   if(export.constructor){
+    
     
     cat("Exporting basis constructor function. Enjoy a fortune():\n")
     print(fortune())
@@ -146,6 +150,8 @@ makeBasis.slearner<- function(x,y, widths, export.constructor=TRUE, control=make
       x.added.2<- x2.2
       
       x.t.2.svd<- propack.svd(x.t.2)
+      #x.t.2.svd<- irlba(x.t.2)
+      
       x.added.ortho.2<- x.t.ortho.2<- x.t.2.svd$u %*% t(x.t.2.svd$v)
       # checkOrtho(x.t.ortho.2)
       
@@ -163,7 +169,9 @@ makeBasis.slearner<- function(x,y, widths, export.constructor=TRUE, control=make
         #round(crossprod(x.added.2, x.t.2),5)
         #checkOrtho(x.added.2)
         
-        x.added.svd.2<- propack.svd(x.added.2, opts=list(verbose=FALSE))
+        x.added.svd.2<- propack.svd(x.added.2)
+        #x.added.svd.2<- irlba(x.added.2)        
+        
         x.added.ortho.2<- x.added.svd.2$u %*% t(x.added.svd.2$v)
         # checkOrtho(x.added.ortho.2)
         # round(crossprod(x.added.ortho.2, x.t.ortho.2), 4) # Orthonormalization breaks orthogonality?!?
@@ -236,7 +244,6 @@ svm.slearner<- function(x, y, widths, train.ind,
   ## Initialization: 
   stopifnot(isTRUE(nrow(x)==length(y)))
   if(type=='fix' && missing(train.ind)) train.ind<- as.logical(rbinom(nrow(x), 1, 0.5))
-  
   
   ### create basis=
   xx<- makeBasis.slearner(x=x[train.ind,], y=y[train.ind], widths=widths)
