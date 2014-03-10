@@ -9,6 +9,8 @@ makeBasis.slearner<- function(x,y, widths, export.constructor=TRUE, control=make
   #   x<- cbind(test.data$X,test.data$X)
   #   y<- test.data$Y
   
+  
+  
   ## Sketch:
   # Choose first layer by singular values
   # Choose next layers to have good predictive power of validation residuals 
@@ -104,7 +106,6 @@ makeBasis.slearner<- function(x,y, widths, export.constructor=TRUE, control=make
         
         cat(sprintf("Constructed variable %s in layer %s.\n", j, i))
         flush.console()
-        
         j<- j+1        
       }       
     }
@@ -120,7 +121,6 @@ makeBasis.slearner<- function(x,y, widths, export.constructor=TRUE, control=make
     # x.t.names<- c(x.t.names, x.added.names)
     # checkOrtho(x.t)
     
-    ## FIXME: deal with impossibly large width[i] values.
     x.added.svd<- propack.svd(x.added)
     
     x.t.orth<- cbind(x.t.orth, x.added.svd$u %*% t(x.added.svd$v) )
@@ -131,8 +131,8 @@ makeBasis.slearner<- function(x,y, widths, export.constructor=TRUE, control=make
   makeBasis<- NA
   if(export.constructor){
     
-    cat("Exporting basis constructor function.\n")
-    fortune()
+    cat("Exporting basis constructor function. Enjoy a fortune():\n")
+    print(fortune())
     
     makeBasis<- function(x){
       x0.2<- cbind(1, x)
@@ -245,14 +245,19 @@ svm.slearner<- function(x, y, widths, train.ind,
   
   ### fit model:
   
+  
+  
   # Cross validatd version
+  Liblinear.type<- ifelse(length(unique(y))>2, 4, 1)
   switch(type,
          fix={
            Liblinear.i<- list()
            Liblinear.miscalss<- rep(NA, length=length(lambdas))
            for(i in seq(along.with=lambdas)){
              # i<- 1
-             .temp<- LiblineaR(data=xxx[train.ind,], labels=y[train.ind], type=4, cost=lambdas[i], cross=0)
+             .temp<- LiblineaR(data=xxx[train.ind,], labels=y[train.ind], 
+                               type=Liblinear.type, cost=lambdas[i], cross=0)
+             
              Liblinear.i<- c(Liblinear.i, .temp)
              
              .temp.predict<- predict(.temp, newx=xxx[!train.ind,])$predictions
@@ -267,7 +272,7 @@ svm.slearner<- function(x, y, widths, train.ind,
          cross={
            Liblinear.i<- list()
            for(i in seq(along.with=lambdas)){
-             .temp<- 1- LiblineaR(data=xxx, labels=y, type=4, cost=lambdas[i], cross=folds)
+             .temp<- 1- LiblineaR(data=xxx, labels=y, type=Liblinear.type, cost=lambdas[i], cross=folds)
              Liblinear.i<- c(Liblinear.i, .temp)
            }  
            min.ind<- which.min(sapply(Liblinear.i, function(x) x))
