@@ -23,7 +23,10 @@ makeBasis.slearner<- function(x,y, widths, export.constructor=TRUE, control=make
   
   
   ## Make first layer:
+  
+  
   x<- cbind(1, x)
+  ## TODO: B)compute rank without creating a copy of x.
   rank.layer1<- min(rankMatrix(x, method="qrLINPACK"), widths[1])
   
   x.svd<- propack.svd(x, neig=rank.layer1)
@@ -85,6 +88,7 @@ makeBasis.slearner<- function(x,y, widths, export.constructor=TRUE, control=make
       x.candidate.ord<- which.max(getNorm(x.candidate.cor)) # Order along correlations
       
       if(x.candidate.cor[x.candidate.ord] < .Machine$double.eps) break()
+      
       
       candidate.rank<- rankMatrix(cbind(x.candidate[, x.candidate.ord], x.added), method="qrLINPACK" )
       
