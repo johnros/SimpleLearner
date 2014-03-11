@@ -32,6 +32,15 @@ slearner.fit<- svm.slearner(x=test.data$X, y=test.data$Y, train.ind=train.ind,
                             type="cross", lambdas=lambdas, widths=widths)
 summary(slearner.fit)
 
+slearner.fit<- svm.slearner(x=test.data$X, y=test.data$Y, train.ind=train.ind, 
+                            type="fix", svd.method='approx', lambdas=lambdas, widths=widths)
+slearner.fit<- svm.slearner(x=test.data$X, y=test.data$Y, train.ind=train.ind, 
+                            type="fix", svd.method='exact', lambdas=lambdas, widths=widths)
+predict(slearner.fit, newx=test.data$X)
+summary(slearner.fit)
+
+
+
 library(lineprof)
 prof.learner<- lineprof(svm.slearner(x=test.data$X, y=test.data$Y, train.ind=train.ind, type="fix", lambdas=lambdas, widths=widths))
 shine(prof.learner)
@@ -47,7 +56,9 @@ widths<- c(10,10,10)
 lambdas<-  2^seq(-2,6,length=50) 
 
 slearner.fit<- svm.slearner(x=train$x[train.ind,], y=train$y[train.ind],
-                            type="fix", lambdas=lambdas, widths=widths)
+                            type="fix", svd.method='exact', lambdas=lambdas, widths=widths)
+slearner.fit<- svm.slearner(x=train$x[train.ind,], y=train$y[train.ind],
+                            type="fix", svd.method='approx', lambdas=lambdas, widths=widths)
 predict(slearner.fit, newx=train$x)
 summary(slearner.fit)
 

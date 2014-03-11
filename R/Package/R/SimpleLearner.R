@@ -1,5 +1,6 @@
 ### Generate X matrix
-makeBasis.slearner<- function(x,y, widths, export.constructor=TRUE, control=makeControl()){
+makeBasis.slearner<- function(x,y, widths, export.constructor=TRUE, 
+                              svd.method='exact', control=makeControl()){
   ## For debugging:
   #     load(file='Package/data/test.data.RData')
   #     widths<- c(17,10)
@@ -27,21 +28,34 @@ makeBasis.slearner<- function(x,y, widths, export.constructor=TRUE, control=make
   
   x<- cbind(1, x)
   ## TODO: B)compute rank without creating a copy of x.
-  rank.layer1<- min(rankMatrix(x, method="qrLINPACK"), widths[1])
-  
-  x.svd<- propack.svd(x, neig=rank.layer1)
-  #x.svd<- irlba(x, nu=rank.layer1, sigma='ls')
   
   
+  ## Note: the irlba approximation greatly deteriorates classifications
+  switch(svd.method,
+         exact={
+           rank.layer1<- min(rankMatrix(x, method="qrLINPACK"), widths[1])
+           x.svd<- propack.svd(x, neig=rank.layer1)
+         },
+         approx={
+           x.svd<- irlba(x, nu=widths[1], sigma='ls') 
+           }
+         )
+
+
   
-  W<- x.svd$v
-  x2 <- x %*% W # Low dimensional X representation (F in Ohad)
+
+  
+  
+  
+  
+  x2 <- x %*% x.svd$v # Low dimensional X representation (F in Ohad)
   #  checkOrtho(x2[,1:widths[1]]) # Orthogonal but not orthonormal
-  W2 <- W / matrix(getNorm(x2), ncol=ncol(W), nrow=nrow(W), byrow=TRUE)
+  W2 <- x.svd$v / matrix(getNorm(x2), ncol=ncol(x.svd$v), nrow=nrow(x.svd$v), byrow=TRUE)
   x2 <- (x %*% W2) # Low dimensional X representation (F in Ohad)  
   x.2.ncol<- ncol(x2)
   # checkOrtho(x2)   # x2 Orthonormal
-  widths.returned[1]<- rank.layer1
+  
+  widths.returned[1]<- x.2.ncol
   
   x.added<- x.t<- x.t.orth<- x2 # The cummulating basis
   if(length(unique(y))>2)  y<- sapply(unique(y), function(x) as.numeric(y==x)) 
@@ -106,7 +120,7 @@ makeBasis.slearner<- function(x,y, widths, export.constructor=TRUE, control=make
           add=x.t.candid.ind[x.candidate.ord],
           x2=x2.candid.inds[x.candidate.ord] ))
         
-        ## TODO: Computation of outer product expensive! How to improve orthogonaliztion?
+        ## TODO: Computation of inner product expensive! How to improve orthogonaliztion?
         y.t<- y.t- x.added1 %*% (t(x.added1) %*% y.t)
         
         
@@ -139,7 +153,7 @@ makeBasis.slearner<- function(x,y, widths, export.constructor=TRUE, control=make
   if(export.constructor){
     
     
-    cat("Exporting basis constructor function. Enjoy a fortune():\n")
+    cat("\nExporting basis constructor function. \n In the meanwhile, enjoy a fortune():\n")
     print(fortune())
     
     makeBasis<- function(x){
@@ -235,7 +249,7 @@ makeBasis.slearner<- function(x,y, widths, export.constructor=TRUE, control=make
 
 
 svm.slearner<- function(x, y, widths, train.ind, 
-                        type=c("fix","cross"), lambdas=2^(1:6), folds=2, ... ){
+                        type, lambdas=2^(1:6), folds=2, svd.method='exact', ... ){
   ## For Debugging:
   #   load_mnist(dirname='../Data/mnist/')
   #   train.ind<- as.logical(rbinom(nrow(train$x), 1, 0.7))
@@ -250,7 +264,7 @@ svm.slearner<- function(x, y, widths, train.ind,
   if(missing(train.ind)) train.ind<- as.logical(rbinom(nrow(x), 1, 0.5))
   
   ### create basis=
-  xx<- makeBasis.slearner(x=x[train.ind,], y=y[train.ind], widths=widths)
+  xx<- makeBasis.slearner(x=x[train.ind,], y=y[train.ind], widths=widths, svd.method=svd.method)
   xxx<- xx$makeBasis(x)
   
   
@@ -267,7 +281,7 @@ svm.slearner<- function(x, y, widths, train.ind,
            for(i in seq(along.with=lambdas)){
              # i<- 1
              .temp<- LiblineaR(data=xxx[train.ind,], labels=y[train.ind], 
-                               type=Liblinear.type, cost=lambdas[i], cross=0)
+                               type=Liblinear.type, cost=lambdas[i], cross=0, ...)
              
              Liblinear.i<- c(Liblinear.i, .temp)
              
@@ -283,7 +297,7 @@ svm.slearner<- function(x, y, widths, train.ind,
          cross={
            Liblinear.i<- list()
            for(i in seq(along.with=lambdas)){
-             .temp<- 1- LiblineaR(data=xxx, labels=y, type=Liblinear.type, cost=lambdas[i], cross=folds)
+             .temp<- 1- LiblineaR(data=xxx, labels=y, type=Liblinear.type, cost=lambdas[i], cross=folds,...)
              Liblinear.i<- c(Liblinear.i, .temp)
            }  
            min.ind<- which.min(sapply(Liblinear.i, function(x) x))
@@ -291,7 +305,7 @@ svm.slearner<- function(x, y, widths, train.ind,
          }
   ) # end switch
   
-  Liblinear.1<- LiblineaR(data=xxx, labels=y, type=4, cost=lambdas[min.ind], cross=0)
+  Liblinear.1<- LiblineaR(data=xxx, labels=y, type=4, cost=lambdas[min.ind], cross=0,...)
   
   result<-list(
     call=match.call(),

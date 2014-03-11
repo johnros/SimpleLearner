@@ -1,11 +1,11 @@
 Package: SimpleLearner
 Type: Package
 Title: Basis Learner
-Version: 0.3
+Version: 0.99.0
 Date: 2014-02-05
-Author: Jonathan Rosenblatt <john.ros.work@gmail.com>
+Author: Jonathan Rosenblatt 
 Maintainer: Jonathan Rosenblatt <john.ros.work@gmail.com>
-Description: Learns a multilayered feed forward basis.
+Description: Learns a deep network architechture.
 Imports:
   LiblineaR,
   class,

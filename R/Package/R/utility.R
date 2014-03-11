@@ -1,5 +1,15 @@
 ## Utility functions:
 
+.onAttach <- function(lib, pkg) {
+  if (interactive()) {
+    packageStartupMessage("SimpleLearner: An R implementation of Ohad Shamir's MATLAB code.\n",
+      "Converted as part of Intel's 'Machine Learning for 2020 Project',\n",
+      "and through the Intel and WIS ICRI-CI collaboration.\n",      
+      domain=NA, appendLF=TRUE)
+  }
+}
+
+
 getNorm<- function(A){
   apply(A, 2, function(x) sqrt(sum(x^2)))
 }

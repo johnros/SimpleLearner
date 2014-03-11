@@ -1,16 +1,15 @@
 \name{svm.slearner}
 \alias{svm.slearner}
 
-\title{
-  Fitting an svm classifier with augmented basis.
-}
+\title{Fit a SVM Classifier Using a Deep Network Basis .}
 
 \description{
   A convenience wrapper around \code{\link[LiblineaR]{LiblineaR}} using a deep neural basis grown using \code{\link{makeBasis.slearner}}.
 }
+
 \usage{
-  svm.slearner(x, y, widths, train.ind, type = c("fix", "cross"),
-                 lambdas = 2^(1:6), folds = 2, ...)
+  svm.slearner(x, y, widths, train.ind, type, lambdas = 2^(1:6),
+                 folds = 2, svd.method='exact', ...)
 }
 
 \arguments{
@@ -21,13 +20,14 @@
 }
 \item{type}{Controls the type of validation. See Details.}
   \item{lambdas}{A numeric vector of values of the svm regularization parameter passed as the \emph{cost} parameter in \code{\link[LiblineaR]{LiblineaR}}}.
+  \item{svd.method}{Passed to \code{\link{makeBasis.slearner}}.}
   \item{folds}{The number of cross validation folds in case \code{type="cross"}.}
   \item{\dots}{Further arguments passed to \code{\link[LiblineaR]{LiblineaR}}.}
   }
 
 
 \details{
-The function initially calls \code{\link{makeBasis.slearner}} to augment the initial design matrix with a deep neural architecture. 
+The function initially calls \code{\link{makeBasis.slearner}} to augment an initial design matrix with a "deep" architecture. 
 If \code{type="fix"} is set, a train-test validation will be performed with \emph{train.ind} marking the training and test data. If missing, a random half-split will be used.
 If \code{type="cross"}, a cross validation of the error will be performed with the number of folds specified in \code{folds}.}
 
@@ -48,15 +48,14 @@ A list including:
 For the basis augmentation:
   Livni, Roi, Shai Shalev-Shwartz, and Ohad Shamir. "A Provably Efficient Algorithm for Training Deep Networks." arXiv:1304.7045 
 
-
-For the svm implementation:
+For the LiblineaR:
   R.-E. Fan, K.-W. Chang, C.-J. Hsieh, X.-R. Wang, and C.-J. Lin. LIBLINEAR: A library for large linear classification Journal of Machine Learning Research 9(2008), 1871-1874.
 }
 \author{
 Jonathan Rosenblatt
 }
 \note{
-  An extension of the learning algorithm can easilly be extended by construcring the X matrix using \code{\link{makeBasis.slearner}} and then plugging it in any other learning strategy.
+  An extension of the learning algorithm can easilly be extended by construcring the \code{X} matrix using \code{\link{makeBasis.slearner}} and then plugging it in any other learning strategy.
 }
 
 \seealso{
@@ -70,9 +69,9 @@ Jonathan Rosenblatt
   train.ind<- rep(FALSE, nrow(test.data$X))
   train.ind[1:250]<- TRUE
   slearner.fit<- svm.slearner(x=test.data$X, y=test.data$Y, train.ind=train.ind,
-                               lambdas=lambdas, widths=widths)
+                            type="fix", lambdas=lambdas, widths=widths)
   summary(slearner.fit)
-  predict(slearner.fit)
+  predict(slearner.fit, newx=test.data$X)
   
   \dontrun{
     rm(list=ls())

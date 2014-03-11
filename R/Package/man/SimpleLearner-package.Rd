@@ -2,15 +2,16 @@
 \alias{SimpleLearner-package}
 \alias{SimpleLearner}
 \docType{package}
-\title{ Basis learner for deep neural networks}
 
-\description{ Augments a given basis with a data driven deep neural network architechture described in the reference.}
+\title{ Basis Learner Algorithm for Deep Networks}
+
+\description{ Augments a given basis with a data driven deep neural architechture described in the reference.}
+
 \details{
 The package implements the basis augmentation algorithm in the reference. 
 This is done in the \code{\link{makeBasis.slearner}} function.
 The augmented basis, essentially a matrix object, can then be used for any learning algorith.
-Currently, a two class svm learner is implemented by wrapping around \code{\link[e1071]{svm}}.
-}
+A convenience wrapper for SVM is implemented in \code{\link{svm.slearner}}.}
 
 \author{
 Jonathan Rosenblatt<john.ros.work@gmail.com> based on Matlab code by Ohad Shamir.
