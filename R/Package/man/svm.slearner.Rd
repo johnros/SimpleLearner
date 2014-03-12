@@ -56,6 +56,7 @@ Jonathan Rosenblatt
 }
 \note{
   An extension of the learning algorithm can easilly be extended by construcring the \code{X} matrix using \code{\link{makeBasis.slearner}} and then plugging it in any other learning strategy.
+  When applicable, the \code{RSofia} package provides a good set learning algorithms which excellent scaling properties.
 }
 
 \seealso{
