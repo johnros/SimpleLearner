@@ -5,7 +5,7 @@ x.p<- 5
 x<- matrix(rnorm(10000),1000,x.p, dimnames=list(NULL, LETTERS[1:x.p]))
 colnames(x.framed<- as.data.frame(x))
 colnames(.xx<- model.matrix(terms(x=formula(~.^10), data=x.framed), data=x.framed))
-y<- .xx %*% runif(ncol(.xx), 0, 30)  + rnorm(nrow(.xx), sd=2)
+y<- pnorm(.xx %*% runif(ncol(.xx), 0, 30)  + rnorm(nrow(.xx), sd=2))> 0.5
 widths<- rep(3,4)
 
 library(lineprof)
@@ -49,11 +49,12 @@ shine(prof.learner)
 
 ## Testing with MNIST data:
 rm(list=ls())
+library(SimpleLearner)
 load_mnist(dirname='../Data/mnist/')
 train.ind<- as.logical(rbinom(nrow(train$x), 1, 0.2))
 widths<- c(50,600,600)
 widths<- c(10,10,10)
-lambdas<-  2^seq(-2,6,length=50) 
+lambdas<-  2^seq(-2,6,length=10) 
 
 slearner.fit<- svm.slearner(x=train$x[train.ind,], y=train$y[train.ind],
                             type="fix", svd.method='exact', lambdas=lambdas, widths=widths)

@@ -9,7 +9,9 @@ makeBasis.slearner<- function(x,y, widths, export.constructor=TRUE,
   #     train.ind[1:250]<- TRUE
   #     x<- cbind(test.data$X,test.data$X)
   #     y<- test.data$Y
-  
+  ff<- tempfile('Slearner_log_')
+  fff<- file(ff, open="wt")
+  sink(fff, type='message')
   
   
   ## Sketch:
@@ -210,6 +212,10 @@ makeBasis.slearner<- function(x,y, widths, export.constructor=TRUE,
     
   }
   
+  
+  sink(type='message')
+  
+  
   return(list(
     basis=x.t,
     widths.returned=widths.returned,
@@ -278,6 +284,9 @@ svm.slearner<- function(x, y, widths, train.ind,
          fix={
            Liblinear.i<- list()
            Liblinear.miscalss<- rep(NA, length=length(lambdas))
+           
+           ##TODO: Consider lapply instead of loop to deal with multiple copies of xxx.
+           ##TODO: Can loop be parallelized without multiple copies of xxx?
            for(i in seq(along.with=lambdas)){
              # i<- 1
              .temp<- LiblineaR(data=xxx[train.ind,], labels=y[train.ind], 

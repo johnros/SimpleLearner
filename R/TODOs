@@ -1,2 +1,1 @@
-- Use multicores?
-- Use approximate svd
+- Use multicores? Will create multiple copies of the augmented basis. :-(
